@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SignBridge — Tab Audio Capture</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <div class="logo-badge">SB</div>
+        <div>
+          <h1 class="header-title">SignBridge</h1>
+          <p class="header-subtitle">Tab Audio &amp; Local ASR &bull; M2 / M4 Avatar</p>
+        </div>
+      </div>
+      <div id="statusBadge" class="badge badge-idle">IDLE</div>
+    </header>
+
+    <!-- Onboarding & Permissions Information -->
+    <section class="card onboarding-card">
+      <div class="card-label">How SignBridge Works</div>
+      <div class="onboarding-text">
+        Captures audio <strong>directly from the active tab</strong> via Chrome TabCapture. No physical microphone is accessed. Audible sound is preserved through speakers/headphones and transcribed locally on <code>127.0.0.1:8765</code> with zero cloud leakage.
+      </div>
+    </section>
+
+    <!-- Active Tab Info -->
+    <section class="card tab-card">
+      <div class="card-label">Active Tab</div>
+      <div class="tab-info">
+        <div id="tabIndicator" class="tab-indicator indicator-neutral"></div>
+        <div class="tab-details">
+          <div id="tabTitle" class="tab-title">Detecting active tab...</div>
+          <div id="tabUrl" class="tab-url">Checking URL...</div>
+        </div>
+      </div>
+      <div id="tabWarning" class="alert-box alert-warning hidden">
+        Internal browser page detected. Please switch to an active web video tab (e.g. YouTube).
+      </div>
+    </section>
+
+    <!-- Primary Action Button -->
+    <section class="action-section">
+      <button id="captureBtn" class="btn btn-primary" type="button" autofocus>
+        <span class="btn-icon">&#9654;</span>
+        <span id="btnText">Start Audio Capture</span>
+      </button>
+      <div id="actionNotice" class="action-notice">Requires explicit user action (PRD FR-01)</div>
+    </section>
+
+    <!-- 3D Avatar Companion Viewport Launcher -->
+    <section class="card launcher-card">
+      <div class="card-label">3D Avatar Companion</div>
+      <button id="openAvatarBtn" class="btn btn-secondary" type="button">
+        <span class="btn-icon">&#128100;</span>
+        <span>Open 3D Avatar Display</span>
+      </button>
+      <div class="launcher-footnote">Opens articulated 3D avatar companion window for real-time ISL signing.</div>
+    </section>
+
+    <!-- Error Alert Banner -->
+    <div id="errorAlert" class="alert-box alert-error hidden">
+      <span class="alert-icon">&times;</span>
+      <span id="errorMessage">An error occurred during audio capture.</span>
+    </div>
+
+    <!-- Recognized Speech Transcript (Milestone M4) -->
+    <section class="card transcript-card">
+      <div class="card-header-row">
+        <div class="card-label">Recognized Speech (Local ASR)</div>
+        <div class="transcript-controls">
+          <span id="transcriptionBadge" class="badge badge-idle">STANDBY</span>
+          <button id="clearTranscriptBtn" class="btn-clear" type="button" title="Clear displayed speech transcript">Clear</button>
+        </div>
+      </div>
+      <div id="transcriptBox" class="transcript-box">
+        <div id="emptyTranscriptNotice" class="empty-notice">
+          Waiting for speech in active tab...
+        </div>
+        <div id="transcriptText" class="transcript-text hidden"></div>
+      </div>
+      <div id="asrMetrics" class="asr-metrics-row">
+        <span id="asrLatency">Latency: --</span>
+        <span id="asrRtf">RTF: --</span>
+        <span id="asrChunkSeq">Chunk: #0</span>
+        <span id="asrConfidence">Conf: --</span>
+      </div>
+      <div class="card-footnote">Recognized speech text (M2/M3). Supported ISL signs animate in the 3D avatar window (M4).</div>
+    </section>
+
+    <!-- Language Selection (PRD FR-05 & Task 1.2) -->
+    <section class="card">
+      <div class="card-label">Target Sign Language</div>
+      <div class="language-selector">
+        <label class="radio-option">
+          <input type="radio" name="targetLanguage" value="ISL" id="langISL" checked>
+          <span class="radio-custom"></span>
+          <span class="radio-label">
+            <strong>ISL</strong> — Indian Sign Language
+            <span class="lang-tag">Priority M3</span>
+          </span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="targetLanguage" value="ASL" id="langASL">
+          <span class="radio-custom"></span>
+          <span class="radio-label">
+            <strong>ASL</strong> — American Sign Language
+            <span class="lang-tag">Planned M5</span>
+          </span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Telemetry & Playback Preservation Status -->
+    <section class="card telemetry-card">
+      <div class="card-label">Audio Pipeline Telemetry</div>
+      <div class="telemetry-grid">
+        <div class="telemetry-item">
+          <span class="telemetry-key">Playback</span>
+          <span id="playbackStatus" class="telemetry-val text-success">Preserved</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-key">Audio Mode</span>
+          <span id="audioMode" class="telemetry-val">Tab Direct</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-key">2.0s Chunks</span>
+          <span id="chunkCount" class="telemetry-val">0</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-key">Duration</span>
+          <span id="elapsedDuration" class="telemetry-val">00:00</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-key">Data Sliced</span>
+          <span id="totalData" class="telemetry-val">0 KB</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-key">Sample Rate</span>
+          <span id="sampleRate" class="telemetry-val">--</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Local Backend Health Check -->
+    <section class="card backend-card">
+      <div class="card-label">Local ASR Backend (127.0.0.1:8765)</div>
+      <div class="backend-row">
+        <div class="backend-status">
+          <span id="backendDot" class="status-dot dot-offline"></span>
+          <span id="backendText">Checking local service...</span>
+        </div>
+        <button id="refreshBackendBtn" class="btn-link" title="Recheck local service">Check</button>
+      </div>
+    </section>
+
+    <!-- Footer Note -->
+    <footer class="footer">
+      <p>Direct tab capture with zero microphone dependence. Keeps playback audible through speakers and headphones.</p>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

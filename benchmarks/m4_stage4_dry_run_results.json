@@ -1,0 +1,137 @@
+{
+  "run_id": "dryrun_m4_48f086d1",
+  "timestamp": "2026-10-20T10:42:25Z",
+  "environment": {
+    "os": "Windows 10 (Build 10.0.22631)",
+    "cpu_arch": "AMD64",
+    "python_version": "3.11.9",
+    "run_id": "dryrun_m4_48f086d1",
+    "timestamp": "2026-10-20T10:42:25Z"
+  },
+  "total_scenarios": 17,
+  "passed": 17,
+  "failed": 0,
+  "skipped": 0,
+  "manual_required": 0,
+  "scenarios": [
+    {
+      "step": 1,
+      "name": "Successful Startup & Shutdown",
+      "status": "PASS",
+      "details": "Verified clean state machine loop: idle -> starting -> capturing -> stopping -> idle",
+      "notes": "Session ID generated, AudioContext initialized, teardown cleans memory."
+    },
+    {
+      "step": 2,
+      "name": "Backend Unavailable at Startup",
+      "status": "PASS",
+      "details": "Connection refused caught cleanly; UI displays 'Backend Offline' alert; capture blocked.",
+      "notes": "Zero unhandled promise rejections."
+    },
+    {
+      "step": 3,
+      "name": "Backend Interruption Mid-Session",
+      "status": "PASS",
+      "details": "Timeout (8.0s) / fetch failure caught; TRANSCRIPTION_ERROR dispatched; queue flushed on stop.",
+      "notes": "Offscreen worker safely recovers without memory accumulation."
+    },
+    {
+      "step": 4,
+      "name": "Silence & Empty Transcription",
+      "status": "PASS",
+      "details": "VAD rejects empty audio; status returns 'empty'; avatar holds neutral pose without gestures.",
+      "notes": "PRD non-hallucination requirement verified."
+    },
+    {
+      "step": 5,
+      "name": "Low-Confidence Transcription (<0.60)",
+      "status": "PASS",
+      "details": "Word probabilities aggregated; warning badge displayed (e.g. '45% (Low ASR Confidence)'); neutral sign held.",
+      "notes": "User alerted to potential speech recognition uncertainty."
+    },
+    {
+      "step": 6,
+      "name": "Supported NAMASTE Routing",
+      "status": "PASS",
+      "details": "Resolved token 'namaste' -> gloss NAMASTE -> animationId 'isl_namaste_godl_v1' (ISLRTC GODL v1.0).",
+      "notes": "Quarantined candidate isl_namaste_mocap_candidate_v1 strictly excluded."
+    },
+    {
+      "step": 7,
+      "name": "Unanimated Dictionary Entry Handling",
+      "status": "PASS",
+      "details": "Gloss THANK_YOU in seed lexicon with animationId=null. Router generates neutral rest pose.",
+      "notes": "Status: 'Words in dictionary, 3D animation awaiting qualified review'."
+    },
+    {
+      "step": 8,
+      "name": "Out-of-Lexicon Phrase Handling",
+      "status": "PASS",
+      "details": "Phrase 'quantum computing rocket' surfaces tokens as unsupportedWords: ['quantum', 'computing', 'rocket'].",
+      "notes": "Avatar holds neutral rest pose with zero synthetic motion."
+    },
+    {
+      "step": 9,
+      "name": "Duplicate / Out-of-Order Transcript Events",
+      "status": "PASS",
+      "details": "Monotonic sequence check (sequenceId <= lastProcessedSeqId) successfully drops stale/duplicate packets.",
+      "notes": "Verified via Stage 1 unit and E2E browser tests."
+    },
+    {
+      "step": 10,
+      "name": "Queue Saturation & Bounded History",
+      "status": "PASS",
+      "details": "Audio queue capped at MAX_QUEUE_SIZE=3 with shift() drop; transcript history capped at 30 items.",
+      "notes": "Memory growth strictly bounded."
+    },
+    {
+      "step": 11,
+      "name": "Avatar Window Closed & Reopened Mid-Session",
+      "status": "PASS",
+      "details": "On initialization, avatar_player.html queries chrome.storage.session('captureState') and reconnects.",
+      "notes": "Seamless resumption of active broadcast stream."
+    },
+    {
+      "step": 12,
+      "name": "Tab Closure & Audio Track Teardown",
+      "status": "PASS",
+      "details": "MediaStreamTrack.onended triggers CAPTURE_TRACK_ENDED event; background shuts down session cleanly.",
+      "notes": "Offscreen document destroyed; status resets to IDLE."
+    },
+    {
+      "step": 13,
+      "name": "Permission Denial & Recovery",
+      "status": "PASS",
+      "details": "Permission rejection on chrome:// or user cancel caught; error surfaced; state transitions to IDLE.",
+      "notes": "User can immediately retry on valid tab."
+    },
+    {
+      "step": 14,
+      "name": "Local Session Data Cleanup",
+      "status": "PASS",
+      "details": "Session stop clears transcript arrays; closing browser wipes chrome.storage.session RAM.",
+      "notes": "Zero lingering audio files or transcripts on disk."
+    },
+    {
+      "step": 15,
+      "name": "Synthetic Incident & Rollback Procedure",
+      "status": "PASS",
+      "details": "Simulated incident INC-TEST-001 handled; verified instant fallback to baseline.",
+      "notes": "Documented in rollback procedure."
+    },
+    {
+      "step": 16,
+      "name": "Export of Test-Only Results Schema",
+      "status": "PASS",
+      "details": "Test results exported complying with schema (runId=dryrun_m4_48f086d1).",
+      "notes": "Schema strictly requires isSynthetic=true and isHumanReview=false."
+    },
+    {
+      "step": 17,
+      "name": "Review Store Segregation & Anti-Pollution",
+      "status": "PASS",
+      "details": "Dry-run test results and synthetic reviews prohibited from reviews/ directory.",
+      "notes": "Review validator rejects synthetic flags, ensuring genuine human-review store remains unpolluted."
+    }
+  ]
+}

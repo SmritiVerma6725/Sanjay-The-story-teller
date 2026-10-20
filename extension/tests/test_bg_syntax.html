@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head><title>Background Syntax Test</title></head>
+<body>
+  <div id="log">Running...</div>
+  <script>
+    window.chrome = {
+      runtime: {
+        onInstalled: { addListener: () => {} },
+        onMessage: { addListener: () => {} },
+        sendMessage: () => {},
+        getContexts: async () => []
+      },
+      storage: {
+        session: { get: async () => ({}), set: async () => ({}) },
+        local: { get: async () => ({}), set: async () => ({}) }
+      },
+      action: {
+        setBadgeText: () => {},
+        setBadgeBackgroundColor: () => {}
+      },
+      offscreen: {
+        hasDocument: async () => false,
+        createDocument: async () => {},
+        closeDocument: async () => {}
+      },
+      tabCapture: {
+        getMediaStreamId: async () => "mock-stream-id"
+      },
+      tabs: {
+        query: async () => [{ id: 1, url: "https://www.youtube.com/watch?v=123" }]
+      }
+    };
+    window.addEventListener("error", (e) => {
+      document.getElementById("log").innerText = "ERROR: " + e.message;
+    });
+  </script>
+  <script src="background.js"></script>
+  <script>
+    if (!document.getElementById("log").innerText.startsWith("ERROR")) {
+      document.getElementById("log").innerText = "SUCCESS: background.js loaded without syntax error";
+    }
+  </script>
+</body>
+</html>

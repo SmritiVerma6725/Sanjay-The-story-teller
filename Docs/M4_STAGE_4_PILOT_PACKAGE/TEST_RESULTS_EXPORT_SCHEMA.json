@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SignBridgeControlledPilotTestExportSchema",
+  "description": "Standardized schema for exporting test-only and controlled pilot evaluation results, ensuring strict segregation from genuine human review records.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "exportType",
+    "isSynthetic",
+    "isHumanReview",
+    "sessionId",
+    "timestamp",
+    "environment",
+    "testResults"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0.0"]
+    },
+    "exportType": {
+      "type": "string",
+      "enum": ["PILOT_USABILITY_EVALUATION", "DRY_RUN_TEST_RESULTS", "BENCHMARK_TELEMETRY"]
+    },
+    "isSynthetic": {
+      "type": "boolean",
+      "description": "Must be true for dry-run simulation and false only for real human sessions."
+    },
+    "isHumanReview": {
+      "type": "boolean",
+      "description": "Strictly false for all pilot usability tests; prevents pollution of linguistic review store."
+    },
+    "sessionId": {
+      "type": "string",
+      "pattern": "^(pilot|dryrun)_[a-zA-Z0-9_-]+$"
+    },
+    "participantId": {
+      "type": ["string", "null"],
+      "pattern": "^P-[0-9]{3}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "environment": {
+      "type": "object",
+      "required": ["os", "chromeVersion", "whisperModel", "whisperComputeType"],
+      "properties": {
+        "os": { "type": "string" },
+        "chromeVersion": { "type": "string" },
+        "whisperModel": { "type": "string" },
+        "whisperComputeType": { "type": "string" }
+      }
+    },
+    "testResults": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["scenarioId", "scenarioName", "status", "latencyMs", "notes"],
+        "properties": {
+          "scenarioId": { "type": "string" },
+          "scenarioName": { "type": "string" },
+          "status": { "type": "string", "enum": ["PASS", "FAIL", "SKIP", "MANUAL_REQUIRED"] },
+          "latencyMs": { "type": "number" },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "evaluationScores": {
+      "type": ["object", "null"],
+      "properties": {
+        "uiClarityLikert": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "perceivedLagLikert": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "statusClarityLikert": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "overallComfortLikert": { "type": "integer", "minimum": 1, "maximum": 5 }
+      }
+    }
+  }
+}

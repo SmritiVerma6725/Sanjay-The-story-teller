@@ -1,0 +1,57 @@
+# SignBridge Licensing & Asset Terms
+
+Copyright (c) 2026 SignBridge Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## Third-Party Component & Asset Licensing Notice
+
+SignBridge incorporates and interfaces with modular third-party components, 3D rigs, and lexical datasets. Each component retains its respective license terms:
+
+1. **Adobe Mixamo Y-Bot 3D Rig (`extension/assets/models/ybot.glb`):**
+   - **Origin:** Adobe Mixamo (mixamo.com)
+   - **Terms:** Governed by Adobe General Terms of Use and Mixamo FAQ. Royalty-free for interactive 3D applications and animation retargeting. Raw character extraction and redistribution are restricted under Adobe terms.
+
+2. **ISLRTC Indian Sign Language Dictionary & Baseline Animation (`isl_namaste_godl_v1`):**
+   - **Origin:** Indian Sign Language Research and Training Centre (ISLRTC), Department of Empowerment of Persons with Disabilities (DEPwD), Ministry of Social Justice and Empowerment, Government of India.
+   - **Terms:** Published under the Government Open Data License - India (GODL) via data.gov.in. Worldwide, royalty-free, non-exclusive license to use, adapt, and create derivative works with mandatory attribution:
+     *"Source: Indian Sign Language Research and Training Centre (ISLRTC), via data.gov.in under GODL."*
+
+3. **faster-whisper & CTranslate2:**
+   - **Origin:** SYSTRAN / OpenAI Whisper
+   - **License:** MIT License
+
+4. **FastAPI & Uvicorn:**
+   - **Origin:** Sebastián Ramírez / Encode
+   - **License:** MIT License / BSD 3-Clause
+
+5. **Three.js WebGL Engine (`extension/lib/three.min.js`):**
+   - **Origin:** Ricardo Cabello (Mr.doob) and Three.js authors
+   - **License:** MIT License
+
+6. **Google MediaPipe Tasks:**
+   - **Origin:** Google LLC
+   - **License:** Apache License 2.0
+
+7. **Quarantined & Unresolved Assets:**
+   - The reference video (`ISLRTC_Namaste_sample.mp4`) and candidate motion capture data (`isl_namaste_mocap_candidate_v1.json`) carry unresolved derivative distribution rights and are **excluded** from public repository redistribution.
+
+For the exhaustive granular audit across all libraries, models, and corpora, see [`Docs/ASSET_LICENSES.md`](Docs/ASSET_LICENSES.md).

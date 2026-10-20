@@ -1,0 +1,67 @@
+[
+  {
+    "id": "TGT-001",
+    "name": "ISLRTC (Indian Sign Language Research and Training Centre)",
+    "category": "Statutory Authority / Certified Interpreters",
+    "proposed_email": "islrtcnewdelhi@gmail.com",
+    "verified_email": "islrtcnewdelhi@gmail.com",
+    "status": "VERIFIED_ON_OFFICIAL_SITE",
+    "verified_url": "https://islrtc.nic.in/contact-us/",
+    "page_title": "Contact Us | Indian Sign Language Research and Training Center ,Government of India | India",
+    "evidence_snippet": "Email : islrtcnewdelhi[at]gmail[dot]com (DOM Line 503)",
+    "screenshot_path": "C:\\AmazonMlChallenge\\Docs\\evidence\\m3_23_chrome_verification\\TGT-001_ISLRTC_contact.png",
+    "dom_dump_path": "C:\\AmazonMlChallenge\\Docs\\evidence\\m3_23_chrome_verification\\TGT-001_ISLRTC_contact.dom.html"
+  },
+  {
+    "id": "TGT-002",
+    "name": "National Association of the Deaf (NAD) India",
+    "category": "Deaf Native Signers & Advocacy Leaders",
+    "proposed_email": "nadindia@gmail.com",
+    "verified_email": "secretary@nadindia.org",
+    "status": "UNVERIFIED",
+    "verified_url": "https://nadindia.org/Contact",
+    "page_title": "Contact Us - National Association of the Deaf - National Association of the Deaf, India",
+    "evidence_snippet": "<a href=\"mailto:secretary@nadindia.org\">secretary@nadindia.org</a> (DOM Lines 888-893); nadindia@gmail.com is unlisted",
+    "screenshot_path": "C:\\AmazonMlChallenge\\Docs\\evidence\\m3_23_chrome_verification\\TGT-002_NAD_contact.png",
+    "dom_dump_path": "C:\\AmazonMlChallenge\\Docs\\evidence\\m3_23_chrome_verification\\TGT-002_NAD_contact.dom.html"
+  },
+  {
+    "id": "TGT-003",
+    "name": "All India Federation of the Deaf (AIFD)",
+    "category": "Deaf Federation / Community Advocates",
+    "proposed_email": "aifd1955@yahoo.co.in",
+    "verified_email": "aifdeaf@gmail.com",
+    "status": "INACCESSIBLE",
+    "verified_url": "http://aifd.org.in",
+    "page_title": "DNS Lookup Failed (Active domain is aifdeaf.org)",
+    "evidence_snippet": "Domain aifd.org.in failed DNS resolution ([Errno 11001] getaddrinfo failed). Active official domain is https://aifdeaf.org/ with published email aifdeaf@gmail.com.",
+    "screenshot_path": "None (DNS Failure)",
+    "dom_dump_path": "None"
+  },
+  {
+    "id": "TGT-004",
+    "name": "Deaf Enabled Foundation (DEF)",
+    "category": "Community Sign Interpreters & Trainers",
+    "proposed_email": "info@def.org.in",
+    "verified_email": "info@def.org.in",
+    "status": "VERIFIED_ON_OFFICIAL_SITE",
+    "verified_url": "https://def.org.in/contact/",
+    "page_title": "Contact Us – Deaf Enabled Foundation",
+    "evidence_snippet": "<div class=\"boc_list_item_text normal\">info@def.org.in</div> (DOM Line 638)",
+    "screenshot_path": "C:\\AmazonMlChallenge\\Docs\\evidence\\m3_23_chrome_verification\\TGT-004_def.org.png",
+    "dom_dump_path": "C:\\AmazonMlChallenge\\Docs\\evidence\\m3_23_chrome_verification\\TGT-004_DEF_contact.html"
+  },
+  {
+    "id": "TGT-005",
+    "name": "IGNOU School of Humanities (SOH)",
+    "category": "Academic Sign Language Linguists (DISLI)",
+    "proposed_email": "soh@ignou.ac.in",
+    "verified_email": "soh@ignou.ac.in",
+    "status": "NEEDS_OWNER_REVIEW",
+    "verified_url": "https://www.ignou.ac.in/",
+    "page_title": "Indira Gandhi National Open University (IGNOU)",
+    "evidence_snippet": "Legacy URL 404s after Samarth migration. Official directory confirms SOH email soh@ignou.ac.in and directorsoh@ignou.ac.in.",
+    "screenshot_path": "C:\\AmazonMlChallenge\\Docs\\evidence\\m3_23_chrome_verification\\TGT-005_IGNOU_home.png",
+    "dom_dump_path": "C:\\AmazonMlChallenge\\Docs\\evidence\\m3_23_chrome_verification\\TGT-005_IGNOU_home.dom.html"
+  }
+]

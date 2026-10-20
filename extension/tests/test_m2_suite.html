@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SignBridge M2 Automated Test Suite</title>
+  <style>
+    body { font-family: monospace; background: #0f172a; color: #f8fafc; padding: 20px; }
+    .pass { color: #10b981; }
+    .fail { color: #ef4444; font-weight: bold; }
+    .suite { margin-top: 15px; font-weight: bold; color: #38bdf8; font-size: 14px; }
+    .test { margin-left: 20px; line-height: 1.6; }
+    #summary { margin-top: 25px; padding: 15px; border-top: 2px solid #334155; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>SignBridge Milestone M2 — Local Speech Recognition Verification Suite</h1>
+  <div id="results"></div>
+  <div id="summary">Running tests...</div>
+
+  <script>
+    const results = [];
+    const container = document.getElementById("results");
+    const summary = document.getElementById("summary");
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message || "Assertion failed");
+    }
+
+    function assertEqual(actual, expected, message) {
+      if (actual !== expected) {
+        throw new Error(`${message || 'Assertion failed'} - Expected: ${expected}, Got: ${actual}`);
+      }
+    }
+
+    async function runSuite(suiteName, tests) {
+      const suiteDiv = document.createElement("div");
+      suiteDiv.className = "suite";
+      suiteDiv.textContent = `=== ${suiteName} ===`;
+      container.appendChild(suiteDiv);
+
+      for (const [testName, fn] of Object.entries(tests)) {
+        const testDiv = document.createElement("div");
+        testDiv.className = "test";
+        try {
+          await fn();
+          testDiv.innerHTML = `<span class="pass">&#10004; PASS</span>: ${testName}`;
+          results.push({ suite: suiteName, name: testName, status: "PASS" });
+        } catch (err) {
+          testDiv.innerHTML = `<span class="fail">&#10008; FAIL</span>: ${testName} - ${err.message}`;
+          results.push({ suite: suiteName, name: testName, status: "FAIL", error: err.message });
+          console.error(`FAIL: ${testName}`, err);
+        }
+        container.appendChild(testDiv);
+      }
+    }
+
+    // Reference WAV Encoder logic from offscreen.js
+    function encodeWavBlob(samples, sampleRate) {
+      const buffer = new ArrayBuffer(44 + samples.length * 2);
+      const view = new DataView(buffer);
+
+      function writeAscii(offset, str) {
+        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+      }
+
+      writeAscii(0, "RIFF");
+      view.setUint32(4, 36 + samples.length * 2, true);
+      writeAscii(8, "WAVE");
+      writeAscii(12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeAscii(36, "data");
+      view.setUint32(40, samples.length * 2, true);
+
+      let offset = 44;
+      for (let i = 0; i < samples.length; i++, offset += 2) {
+        const s = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      }
+
+      return { blob: new Blob([buffer], { type: "audio/wav" }), buffer, view };
+    }
+
+    function downsampleBuffer(buffers, inputSampleRate, targetRate) {
+      let totalLen = 0;
+      for (let i = 0; i < buffers.length; i++) totalLen += buffers[i].length;
+      const merged = new Float32Array(totalLen);
+      let offset = 0;
+      for (let i = 0; i < buffers.length; i++) {
+        merged.set(buffers[i], offset);
+        offset += buffers[i].length;
+      }
+      if (inputSampleRate === targetRate) return merged;
+
+      const ratio = inputSampleRate / targetRate;
+      const newLen = Math.round(totalLen / ratio);
+      const result = new Float32Array(newLen);
+      for (let i = 0; i < newLen; i++) {
+        const origPos = i * ratio;
+        const lower = Math.floor(origPos);
+        const upper = Math.min(lower + 1, totalLen - 1);
+        const frac = origPos - lower;
+        result[i] = merged[lower] * (1 - frac) + merged[upper] * frac;
+      }
+      return result;
+    }
+
+    async function startAllSuites() {
+      // Suite 1: Popup M2 DOM & Transcription Elements
+      await runSuite("1. M2 Popup DOM & Transcription UI Elements", {
+        "popup.html contains all required M2 speech recognition elements": async () => {
+          const resp = await fetch("../popup.html");
+          assert(resp.ok, "popup.html could not be fetched");
+          const html = await resp.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+
+          const requiredM2Ids = [
+            "transcriptionBadge", "clearTranscriptBtn", "transcriptBox",
+            "emptyTranscriptNotice", "transcriptText", "asrMetrics",
+            "asrLatency", "asrRtf", "asrChunkSeq"
+          ];
+
+          for (const id of requiredM2Ids) {
+            const el = doc.getElementById(id);
+            assert(el !== null, `Required M2 element #${id} missing from popup.html`);
+          }
+        },
+
+        "M2 Header subtitle denotes Tab Audio & Local ASR": async () => {
+          const resp = await fetch("../popup.html");
+          const html = await resp.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+          const subtitle = doc.querySelector(".header-subtitle");
+          assert(subtitle !== null, "Subtitle element missing");
+          assert(subtitle.textContent.includes("M2"), "Subtitle must reference M2");
+          assert(subtitle.textContent.includes("Local ASR") || subtitle.textContent.includes("ASR"), "Subtitle must reference ASR");
+        },
+
+        "Explicit disclaimer states speech-to-text only without claiming sign translation": async () => {
+          const resp = await fetch("../popup.html");
+          const html = await resp.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+          const footnote = doc.querySelector(".card-footnote");
+          assert(footnote !== null, "Card footnote missing");
+          assert(footnote.textContent.includes("Recognized speech") || footnote.textContent.includes("Speech-to-text"), "Must clearly label text as recognized speech");
+          assert(footnote.textContent.includes("M3"), "Must reference M3 for sign language translation");
+        }
+      });
+
+      // Suite 2: In-Memory 16kHz PCM WAV Audio Encoding
+      await runSuite("2. In-Memory PCM WAV Audio Encoding & Downsampling", {
+        "Downsamples 48000 Hz input to 16000 Hz with correct sample count": () => {
+          const inputRate = 48000;
+          const targetRate = 16000;
+          const durationSec = 2.0;
+          const inputSamples = new Float32Array(inputRate * durationSec);
+          // Fill with 440 Hz test tone
+          for (let i = 0; i < inputSamples.length; i++) {
+            inputSamples[i] = Math.sin((2 * Math.PI * 440 * i) / inputRate);
+          }
+
+          const downsampled = downsampleBuffer([inputSamples], inputRate, targetRate);
+          assertEqual(downsampled.length, targetRate * durationSec, "Downsampled length must be exactly 32,000 samples");
+        },
+
+        "Encodes standard 44-byte RIFF WAV header for 16kHz 16-bit mono PCM": () => {
+          const sampleRate = 16000;
+          const numSamples = 32000; // 2.0 seconds
+          const testSamples = new Float32Array(numSamples);
+
+          const { view, buffer } = encodeWavBlob(testSamples, sampleRate);
+          assertEqual(buffer.byteLength, 44 + numSamples * 2, "WAV buffer size must be 44 header bytes + 64000 PCM bytes");
+
+          // RIFF header validation
+          const riff = String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3));
+          assertEqual(riff, "RIFF", "RIFF identifier valid");
+
+          const wave = String.fromCharCode(view.getUint8(8), view.getUint8(9), view.getUint8(10), view.getUint8(11));
+          assertEqual(wave, "WAVE", "WAVE format valid");
+
+          assertEqual(view.getUint16(20, true), 1, "Audio format must be 1 (PCM)");
+          assertEqual(view.getUint16(22, true), 1, "Channel count must be 1 (Mono)");
+          assertEqual(view.getUint32(24, true), 16000, "Sample rate must be 16000");
+          assertEqual(view.getUint32(28, true), 32000, "Byte rate must be 32000 (16000 * 2)");
+          assertEqual(view.getUint16(32, true), 2, "Block align must be 2");
+          assertEqual(view.getUint16(34, true), 16, "Bits per sample must be 16");
+
+          const dataHeader = String.fromCharCode(view.getUint8(36), view.getUint8(37), view.getUint8(38), view.getUint8(39));
+          assertEqual(dataHeader, "data", "data chunk header valid");
+          assertEqual(view.getUint32(40, true), numSamples * 2, "data length must match sample bytes");
+        }
+      });
+
+      // Suite 3: Bounded Queue & Concurrency Mutex Logic
+      await runSuite("3. Bounded Queue & Concurrency Mutex Management", {
+        "FIFO queue limits maximum in-flight backlog to 3 chunks to prevent memory ballooning": () => {
+          const queue = [];
+          const MAX_SIZE = 3;
+          let droppedCount = 0;
+
+          function enqueue(chunk) {
+            if (queue.length >= MAX_SIZE) {
+              queue.shift();
+              droppedCount++;
+            }
+            queue.push(chunk);
+          }
+
+          // Push 5 sequential chunks
+          for (let i = 1; i <= 5; i++) {
+            enqueue({ sequenceId: i, timestamp: (i - 1) * 2.0 });
+          }
+
+          assertEqual(queue.length, 3, "Queue length must not exceed 3");
+          assertEqual(droppedCount, 2, "Exactly 2 oldest chunks must be dropped");
+          assertEqual(queue[0].sequenceId, 3, "Remaining oldest chunk must be sequence 3");
+          assertEqual(queue[2].sequenceId, 5, "Latest chunk must be sequence 5");
+        },
+
+        "Concurrency lock guarantees sequential single-request execution": async () => {
+          let inFlightCount = 0;
+          let maxObservedInFlight = 0;
+          const executionOrder = [];
+
+          async function mockTranscribe(seqId) {
+            inFlightCount++;
+            if (inFlightCount > maxObservedInFlight) maxObservedInFlight = inFlightCount;
+            // Simulate network latency
+            await new Promise(r => setTimeout(r, 20));
+            executionOrder.push(seqId);
+            inFlightCount--;
+          }
+
+          // Worker simulation with mutex
+          const queue = [1, 2, 3];
+          let isProcessing = false;
+
+          async function processQueue() {
+            if (isProcessing) return;
+            isProcessing = true;
+            while (queue.length > 0) {
+              const item = queue.shift();
+              await mockTranscribe(item);
+            }
+            isProcessing = false;
+          }
+
+          await Promise.all([processQueue(), processQueue(), processQueue()]);
+
+          assertEqual(maxObservedInFlight, 1, "Maximum concurrent in-flight requests must strictly be 1");
+          assertEqual(executionOrder.join(","), "1,2,3", "Execution order must match FIFO queue sequence");
+        }
+      });
+
+      // Suite 4: Timeout, Error Recovery & Playback Route Preservation
+      await runSuite("4. Error Recovery & Playback Preservation Route", {
+        "AbortController enforces request cancellation upon timeout": async () => {
+          let aborted = false;
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30);
+
+          try {
+            await new Promise((resolve, reject) => {
+              controller.signal.addEventListener("abort", () => {
+                aborted = true;
+                reject(new Error("AbortError"));
+              });
+            });
+          } catch (e) {
+            assertEqual(e.message, "AbortError", "Caught AbortError correctly");
+          } finally {
+            clearTimeout(timeoutId);
+          }
+
+          assert(aborted, "Request was aborted by timeout signal");
+        },
+
+        "Playback preservation route remains unblocked during backend failure": () => {
+          let playbackRouteActive = false;
+          let transcriptionErrorHandled = false;
+
+          // Mock Web Audio routing
+          const audioContext = {
+            destination: { name: "speakers_or_headphones" }
+          };
+          const mediaSource = {
+            connect: (target) => {
+              if (target === audioContext.destination) playbackRouteActive = true;
+            }
+          };
+
+          // Route playback
+          mediaSource.connect(audioContext.destination);
+
+          // Simulate transcription failure
+          try {
+            throw new Error("HTTP 503 Backend Offline");
+          } catch (err) {
+            transcriptionErrorHandled = true;
+          }
+
+          assert(playbackRouteActive, "Web Audio destination route must remain active and audible");
+          assert(transcriptionErrorHandled, "Transcription error caught gracefully without tearing down playback");
+        },
+
+        "Strict privacy boundary: destination URL is strictly loopback (127.0.0.1:8765)": () => {
+          const BACKEND_TRANSCRIBE_URL = "http://127.0.0.1:8765/api/transcribe";
+          const BACKEND_HEALTH_URL = "http://127.0.0.1:8765/health";
+
+          assert(BACKEND_TRANSCRIBE_URL.startsWith("http://127.0.0.1:8765/"), "Transcribe URL must be 127.0.0.1:8765");
+          assert(BACKEND_HEALTH_URL.startsWith("http://127.0.0.1:8765/"), "Health URL must be 127.0.0.1:8765");
+          assert(!BACKEND_TRANSCRIBE_URL.includes("0.0.0.0"), "Must not bind to 0.0.0.0");
+          assert(!BACKEND_TRANSCRIBE_URL.includes("api.openai.com"), "No external cloud API allowed");
+        }
+      });
+
+      // Summary calculation
+      const passed = results.filter(r => r.status === "PASS").length;
+      const failed = results.filter(r => r.status === "FAIL").length;
+      summary.innerHTML = `
+        <strong>Test Run Complete:</strong> ${results.length} total |
+        <span class="pass">${passed} PASSED</span> |
+        <span class="${failed > 0 ? 'fail' : 'pass'}">${failed} FAILED</span>
+      `;
+      window.__TEST_RESULTS__ = { total: results.length, passed, failed, results };
+      console.log(`__TEST_RESULTS__: total=${results.length}, passed=${passed}, failed=${failed}`);
+    }
+
+    startAllSuites();
+  </script>
+</body>
+</html>

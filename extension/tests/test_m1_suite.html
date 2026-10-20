@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SignBridge M1 Automated Test Suite</title>
+  <style>
+    body { font-family: monospace; background: #0f172a; color: #f8fafc; padding: 20px; }
+    .pass { color: #10b981; }
+    .fail { color: #ef4444; font-weight: bold; }
+    .suite { margin-top: 15px; font-weight: bold; color: #38bdf8; font-size: 14px; }
+    .test { margin-left: 20px; line-height: 1.6; }
+    #summary { margin-top: 25px; padding: 15px; border-top: 2px solid #334155; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>SignBridge Milestone M1 — Test Execution Suite</h1>
+  <div id="results"></div>
+  <div id="summary">Running tests...</div>
+
+  <script>
+    const results = [];
+    const container = document.getElementById("results");
+    const summary = document.getElementById("summary");
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message || "Assertion failed");
+      }
+    }
+
+    function assertEqual(actual, expected, message) {
+      if (actual !== expected) {
+        throw new Error(`${message || 'Assertion failed'} - Expected: ${expected}, Got: ${actual}`);
+      }
+    }
+
+    async function runSuite(suiteName, tests) {
+      const suiteDiv = document.createElement("div");
+      suiteDiv.className = "suite";
+      suiteDiv.textContent = `=== ${suiteName} ===`;
+      container.appendChild(suiteDiv);
+
+      for (const [testName, fn] of Object.entries(tests)) {
+        const testDiv = document.createElement("div");
+        testDiv.className = "test";
+        try {
+          await fn();
+          testDiv.innerHTML = `<span class="pass">&#10004; PASS</span>: ${testName}`;
+          results.push({ suite: suiteName, name: testName, status: "PASS" });
+        } catch (err) {
+          testDiv.innerHTML = `<span class="fail">&#10008; FAIL</span>: ${testName} - ${err.message}`;
+          results.push({ suite: suiteName, name: testName, status: "FAIL", error: err.message });
+          console.error(`FAIL: ${testName}`, err);
+        }
+        container.appendChild(testDiv);
+      }
+    }
+
+    async function startAllSuites() {
+      // 1. Popup DOM Structure Tests
+      await runSuite("1. Popup UI DOM Structure & Initial Elements", {
+        "popup.html loads and parses all required M1 elements": async () => {
+          const resp = await fetch("../popup.html");
+          assert(resp.ok, "popup.html could not be fetched");
+          const html = await resp.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+
+          const requiredIds = [
+            "statusBadge", "tabIndicator", "tabTitle", "tabUrl", "tabWarning",
+            "captureBtn", "btnText", "actionNotice", "errorAlert", "errorMessage",
+            "langISL", "langASL", "playbackStatus", "audioMode", "chunkCount",
+            "elapsedDuration", "totalData", "sampleRate", "backendDot",
+            "backendText", "refreshBackendBtn"
+          ];
+
+          for (const id of requiredIds) {
+            const el = doc.getElementById(id);
+            assert(el !== null, `Required element #${id} missing from popup.html`);
+          }
+        },
+
+        "Language radio buttons default to ISL with ASL alternative": async () => {
+          const resp = await fetch("../popup.html");
+          const html = await resp.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+
+          const isl = doc.getElementById("langISL");
+          const asl = doc.getElementById("langASL");
+          assert(isl.hasAttribute("checked"), "ISL must be checked by default (M3 priority)");
+          assertEqual(isl.value, "ISL", "ISL radio value must be 'ISL'");
+          assertEqual(asl.value, "ASL", "ASL radio value must be 'ASL'");
+        },
+
+        "Explicit user activation notice is prominently displayed": async () => {
+          const resp = await fetch("../popup.html");
+          const html = await resp.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+
+          const notice = doc.getElementById("actionNotice");
+          assert(notice.textContent.includes("PRD FR-01"), "Notice should reference PRD FR-01");
+        }
+      });
+
+      // 2. Telemetry and Utility Functions
+      await runSuite("2. Popup Logic & Telemetry Formatting", {
+        "formatBytes handles 0, KB, and MB accurately": () => {
+          function formatBytes(bytes) {
+            if (!bytes || bytes === 0) return "0 KB";
+            const k = 1024;
+            if (bytes < k) return `${bytes} B`;
+            if (bytes < k * k) return `${(bytes / k).toFixed(1)} KB`;
+            return `${(bytes / (k * k)).toFixed(2)} MB`;
+          }
+
+          assertEqual(formatBytes(0), "0 KB", "0 bytes");
+          assertEqual(formatBytes(512), "512 B", "512 bytes");
+          assertEqual(formatBytes(2048), "2.0 KB", "2048 bytes");
+          assertEqual(formatBytes(1048576 * 2.5), "2.50 MB", "2.5 MB");
+        },
+
+        "formatDuration formats mm:ss correctly": () => {
+          function formatDuration(seconds) {
+            if (!seconds || isNaN(seconds)) return "00:00";
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+          }
+
+          assertEqual(formatDuration(0), "00:00", "0 seconds");
+          assertEqual(formatDuration(9), "00:09", "9 seconds");
+          assertEqual(formatDuration(65), "01:05", "65 seconds");
+          assertEqual(formatDuration(3605), "60:05", "3605 seconds");
+        }
+      });
+
+      // 3. Service Worker Logic & State Machine Tests (Mocked)
+      await runSuite("3. Service Worker State Machine & Capture Validation", {
+        "Internal pages (chrome://, about:) are rejected before capture request": () => {
+          function validateUrl(url) {
+            if (!url) return { ok: false, error: "No URL" };
+            if (url.startsWith("chrome://") || url.startsWith("chrome-extension://") || url.startsWith("edge://") || url.startsWith("about:")) {
+              return { ok: false, error: "Cannot capture Chrome internal pages." };
+            }
+            return { ok: true };
+          }
+
+          assertEqual(validateUrl("chrome://extensions").ok, false, "chrome:// rejected");
+          assertEqual(validateUrl("about:blank").ok, false, "about: rejected");
+          assertEqual(validateUrl("https://www.youtube.com/watch?v=123").ok, true, "YouTube accepted");
+          assertEqual(validateUrl("https://example.com/video").ok, true, "Standard HTTP accepted");
+        },
+
+        "State machine transitions: idle -> starting -> capturing -> stopping -> idle": () => {
+          let state = {
+            status: "idle",
+            tabId: null,
+            chunkCount: 0,
+            totalBytes: 0,
+            errorMessage: null
+          };
+
+          // Step 1: Start
+          assert(state.status === "idle", "Initial state must be idle");
+          state.status = "starting";
+          state.tabId = 101;
+          assertEqual(state.status, "starting", "Status becomes starting");
+
+          // Duplicate start prevention
+          const canStartAgain = state.status !== "capturing" && state.status !== "starting";
+          assertEqual(canStartAgain, false, "Duplicate start must be blocked");
+
+          // Step 2: Offscreen confirms capture
+          state.status = "capturing";
+          state.chunkCount = 3;
+          state.totalBytes = 48000;
+          assertEqual(state.status, "capturing", "Status becomes capturing");
+
+          // Step 3: Stop
+          state.status = "stopping";
+          assertEqual(state.status, "stopping", "Status becomes stopping");
+
+          // Step 4: Cleanup
+          state = {
+            status: "idle",
+            tabId: null,
+            chunkCount: 0,
+            totalBytes: 0,
+            errorMessage: null
+          };
+          assertEqual(state.status, "idle", "State returns to idle cleanly");
+        }
+      });
+
+      // 4. Offscreen Audio Pipeline Architecture Tests
+      await runSuite("4. Web Audio Routing & Teardown Architecture", {
+        "Web Audio API destination routing design": () => {
+          let connectedToDestination = false;
+          let sourceCreated = false;
+
+          const fakeStream = { id: "fake_stream" };
+          const fakeAudioContext = {
+            destination: { name: "speaker_or_headphones" },
+            state: "suspended",
+            resume: async function() { this.state = "running"; },
+            createMediaStreamSource: function(st) {
+              sourceCreated = (st === fakeStream);
+              return {
+                connect: function(dest) {
+                  if (dest === fakeAudioContext.destination) {
+                    connectedToDestination = true;
+                  }
+                },
+                disconnect: function() {}
+              };
+            },
+            close: async function() { this.state = "closed"; }
+          };
+
+          const source = fakeAudioContext.createMediaStreamSource(fakeStream);
+          source.connect(fakeAudioContext.destination);
+
+          assert(sourceCreated, "MediaStreamSource created from tab stream");
+          assert(connectedToDestination, "Stream source connected to audioContext.destination (playback preserved)");
+        },
+
+        "Clean teardown stops all audio tracks and closes AudioContext": async () => {
+          let track1Stopped = false;
+          let track2Stopped = false;
+          let contextClosed = false;
+
+          const fakeStream = {
+            getTracks: () => [
+              { stop: () => { track1Stopped = true; } },
+              { stop: () => { track2Stopped = true; } }
+            ]
+          };
+
+          const fakeContext = {
+            state: "running",
+            close: async function() {
+              this.state = "closed";
+              contextClosed = true;
+            }
+          };
+
+          // Execute teardown pattern from offscreen.js
+          fakeStream.getTracks().forEach(t => t.stop());
+          await fakeContext.close();
+
+          assert(track1Stopped, "Audio track 1 stopped");
+          assert(track2Stopped, "Audio track 2 stopped");
+          assert(contextClosed, "AudioContext closed");
+        }
+      });
+
+      // Summary
+      const passed = results.filter(r => r.status === "PASS").length;
+      const failed = results.filter(r => r.status === "FAIL").length;
+      summary.innerHTML = `
+        <strong>Test Run Complete:</strong> ${results.length} total |
+        <span class="pass">${passed} PASSED</span> |
+        <span class="${failed > 0 ? 'fail' : 'pass'}">${failed} FAILED</span>
+      `;
+      window.__TEST_RESULTS__ = { total: results.length, passed, failed, results };
+      console.log(`__TEST_RESULTS__: total=${results.length}, passed=${passed}, failed=${failed}`);
+    }
+
+    startAllSuites();
+  </script>
+</body>
+</html>

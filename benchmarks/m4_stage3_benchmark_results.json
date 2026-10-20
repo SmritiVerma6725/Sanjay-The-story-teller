@@ -1,0 +1,127 @@
+{
+  "benchmark_version": "1.0.0",
+  "timestamp": "2026-10-20T10:09:06Z",
+  "environment": {
+    "timestamp": "2026-10-20T10:09:06Z",
+    "os": "Windows 10 (Build 10.0.22631)",
+    "cpu_arch": "AMD64",
+    "cpu_count": 4,
+    "python_version": "3.11.9",
+    "chrome_version": "Unknown",
+    "whisper_model": "tiny.en",
+    "whisper_compute_type": "int8",
+    "whisper_device": "cpu",
+    "whisper_cpu_threads": 4
+  },
+  "rtf_formula": "RTF = (inference_time_ms / 1000.0) / audio_duration_seconds",
+  "measurements": {
+    "wav_encoding_ms": {
+      "count": 50,
+      "min": 0.587,
+      "max": 1.615,
+      "mean": 0.721,
+      "median": 0.636,
+      "p95": 1.077
+    },
+    "asr_silence_2s": {
+      "duration_sec": 2.0,
+      "latency_ms": {
+        "count": 15,
+        "min": 35.16,
+        "max": 63.903,
+        "mean": 41.131,
+        "median": 36.43,
+        "p95": 63.903
+      },
+      "rtf": {
+        "count": 15,
+        "min": 0.018,
+        "max": 0.032,
+        "mean": 0.021,
+        "median": 0.018,
+        "p95": 0.032
+      }
+    },
+    "asr_real_speech_2s": {
+      "duration_sec": 2.0,
+      "transcript": "Hello world, this is sign",
+      "avg_confidence": 0.752,
+      "latency_ms": {
+        "count": 15,
+        "min": 982.597,
+        "max": 1309.499,
+        "mean": 1033.141,
+        "median": 1011.226,
+        "p95": 1309.499
+      },
+      "rtf": {
+        "count": 15,
+        "min": 0.491,
+        "max": 0.655,
+        "mean": 0.517,
+        "median": 0.506,
+        "p95": 0.655
+      }
+    },
+    "asr_real_speech_5s": {
+      "duration_sec": 5.22,
+      "transcript": "Hello world, this is signbridge local speech recognition test.",
+      "latency_ms": {
+        "count": 10,
+        "min": 1089.683,
+        "max": 1133.06,
+        "mean": 1110.715,
+        "median": 1110.973,
+        "p95": 1133.06
+      },
+      "rtf": {
+        "count": 10,
+        "min": 0.209,
+        "max": 0.217,
+        "mean": 0.213,
+        "median": 0.213,
+        "p95": 0.217
+      }
+    },
+    "translation_routing_ms": {
+      "count": 500,
+      "min": 0.022,
+      "max": 1.276,
+      "mean": 0.031,
+      "median": 0.027,
+      "p95": 0.034
+    },
+    "avatar_webgl_rendering": {
+      "mean_fps": 60.0,
+      "median_delta_ms": 16.7,
+      "p95_delta_ms": 16.8,
+      "min_delta_ms": 16.5,
+      "max_delta_ms": 16.8,
+      "samples": 90
+    },
+    "end_to_end_model_ms": {
+      "chunk_duration_sec": 2.0,
+      "median_e2e_ms": 1016.4,
+      "p95_e2e_ms": 1315.1,
+      "breakdown": {
+        "wav_encoding_median_ms": 0.636,
+        "localhost_transfer_ms": 4.0,
+        "whisper_inference_median_ms": 1011.226,
+        "routing_dispatch_median_ms": 0.027,
+        "keyframe_eval_ms": 0.5
+      }
+    },
+    "process_memory": {
+      "initial_working_set_mb": 150.38,
+      "post_inference_working_set_mb": 185.54,
+      "peak_working_set_mb": 256.44,
+      "budget_threshold_mb": 250.0,
+      "status": "FAIL"
+    },
+    "queue_and_buffer_limits": {
+      "max_audio_queue_depth": 3,
+      "max_transcript_history_items": 30,
+      "request_timeout_ms": 8000
+    }
+  }
+}

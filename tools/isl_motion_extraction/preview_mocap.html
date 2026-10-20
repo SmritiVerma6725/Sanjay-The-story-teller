@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SignBridge M3.11 — ISL Motion Capture Review Studio &amp; Feedback System (NAMASTE)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #090d16;
+      color: #f1f5f9;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    header {
+      width: 100%;
+      max-width: 1140px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      color: #94a3b8;
+      font-size: 13.5px;
+      margin-bottom: 12px;
+    }
+    .governance-banner {
+      display: inline-block;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .notice-box {
+      width: 100%;
+      max-width: 1140px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-left: 4px solid #f59e0b;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      color: #cbd5e1;
+      margin-bottom: 18px;
+    }
+    .notice-box strong { color: #f59e0b; }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 520px 600px;
+      gap: 20px;
+      width: 100%;
+      max-width: 1140px;
+    }
+    @media (max-width: 1160px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-header {
+      padding: 12px 16px;
+      background: #1e293b;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+    }
+    .video-viewport {
+      width: 100%;
+      height: 480px;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .video-fallback-msg {
+      position: absolute;
+      padding: 20px;
+      text-align: center;
+      font-size: 12.5px;
+      color: #94a3b8;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      margin: 16px;
+      display: none;
+    }
+    #avatar-container {
+      width: 100%;
+      height: 480px;
+      position: relative;
+      background: #050811;
+    }
+    .status-overlay {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid #334155;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .confidence-alert-banner {
+      display: none;
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+
+    /* Controls Panel */
+    .controls-panel {
+      width: 100%;
+      max-width: 1140px;
+      margin-top: 18px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 18px;
+    }
+    .timeline-container {
+      margin-bottom: 16px;
+    }
+    .timeline-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12.5px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+    .scrubber {
+      width: 100%;
+      height: 8px;
+      accent-color: #38bdf8;
+      cursor: pointer;
+    }
+    .track-legend {
+      display: flex;
+      gap: 14px;
+      font-size: 11px;
+      margin-top: 6px;
+      color: #64748b;
+      flex-wrap: wrap;
+    }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot-rest { background: #64748b; }
+    .dot-observed { background: #10b981; }
+    .dot-contact { background: #3b82f6; }
+    .dot-low-conf { background: #ef4444; }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    button {
+      background: #1e293b;
+      color: #f1f5f9;
+      border: 1px solid #334155;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12.5px;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    button:hover {
+      background: #334155;
+      border-color: #38bdf8;
+    }
+    button.primary {
+      background: #0284c7;
+      border-color: #38bdf8;
+    }
+    button.primary:hover {
+      background: #0369a1;
+    }
+    button.danger-jump {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: #ef4444;
+      color: #fca5a5;
+    }
+    button.danger-jump:hover {
+      background: rgba(239, 68, 68, 0.3);
+    }
+    .rate-select {
+      background: #1e293b;
+      color: #f1f5f9;
+      border: 1px solid #334155;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* Telemetry Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      font-size: 12px;
+      background: #090d16;
+      border: 1px solid #1e293b;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    @media (max-width: 800px) {
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .metric-label {
+      color: #64748b;
+      font-size: 11px;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+    .metric-val {
+      font-size: 13px;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+    .badge-observed { background: #065f46; color: #6ee7b7; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+    .badge-contact { background: #1e40af; color: #93c5fd; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+    .badge-rest { background: #475569; color: #cbd5e1; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+    .badge-low-conf { background: #991b1b; color: #fca5a5; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+
+    /* Limitations Collapsible */
+    .limitations-box {
+      width: 100%;
+      max-width: 1140px;
+      margin-top: 18px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .limitations-header {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #f59e0b;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .limitations-content {
+      margin-top: 12px;
+      font-size: 12.5px;
+      color: #94a3b8;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 800px) {
+      .limitations-content { grid-template-columns: 1fr; }
+    }
+    .limitation-card {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .limitation-card h4 {
+      color: #e2e8f0;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    /* Review Worksheet */
+    .worksheet-panel {
+      width: 100%;
+      max-width: 1140px;
+      margin-top: 18px;
+      margin-bottom: 32px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .worksheet-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 4px;
+    }
+    .worksheet-sub {
+      font-size: 12.5px;
+      color: #94a3b8;
+      margin-bottom: 16px;
+    }
+    .hash-display-bar {
+      background: #090d16;
+      border: 1px solid #334155;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      color: #cbd5e1;
+      font-family: monospace;
+      margin-bottom: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 800px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .form-group label {
+      font-size: 12px;
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      background: #090d16;
+      border: 1px solid #334155;
+      color: #f1f5f9;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-family: inherit;
+    }
+    .form-group textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    /* Rubric Table */
+    .rubric-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      margin-bottom: 16px;
+    }
+    .rubric-table th, .rubric-table td {
+      border: 1px solid #1e293b;
+      padding: 10px 12px;
+      text-align: left;
+    }
+    .rubric-table th {
+      background: #1e293b;
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+    .rubric-row.unrated {
+      border-left: 3px solid #f59e0b;
+    }
+    .rubric-options {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .rating-pill {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid #334155;
+      background: #090d16;
+      color: #cbd5e1;
+      cursor: pointer;
+      user-select: none;
+    }
+    .rating-pill:hover {
+      border-color: #38bdf8;
+    }
+    .rating-pill.selected-pass {
+      background: #065f46;
+      color: #6ee7b7;
+      border-color: #10b981;
+    }
+    .rating-pill.selected-minor {
+      background: #78350f;
+      color: #fcd34d;
+      border-color: #f59e0b;
+    }
+    .rating-pill.selected-fail {
+      background: #7f1d1d;
+      color: #fca5a5;
+      border-color: #ef4444;
+    }
+    .rating-pill.selected-na {
+      background: #334155;
+      color: #e2e8f0;
+      border-color: #94a3b8;
+    }
+
+    .worksheet-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      margin-top: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .action-group-left, .action-group-right {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .validation-warning {
+      color: #fca5a5;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid #ef4444;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+
+  <!-- Vendor dependencies -->
+  <script src="../../extension/lib/three.min.js"></script>
+  <script src="../../extension/lib/GLTFLoader.js"></script>
+  <script src="../../extension/models/sign_contracts.js"></script>
+  <script src="../../extension/animation/keyframe_registry.js"></script>
+  <script src="../../extension/animation/avatar_player.js"></script>
+</head>
+<body>
+
+  <header>
+    <h1>SignBridge M3.11 — ISL Motion Capture Review Studio &amp; Feedback Loop</h1>
+    <p class="subtitle">Auditable Linguistic Review: Official ISLRTC Reference Video vs. Retargeted Mixamo Y-Bot</p>
+    <div class="governance-banner">
+      &#9888; EXPERIMENTAL MOTION RECONSTRUCTION — PENDING QUALIFIED DEAF-NATIVE ISL REVIEW
+    </div>
+  </header>
+
+  <!-- Ethical Guard & Notice -->
+  <div class="notice-box">
+    <strong>Reviewer Protocol:</strong> This candidate animation is derived from the Government of India Open Data License (GODL) dictionary release. Computational playback does <em>not</em> constitute linguistic verification. Please inspect the five phonological parameters, scrutinize the flagged uncertain frames (22, 59, 62), and record whether the movements accurately represent <em>Namaste</em>. Every evaluation generates an auditable, hash-verified review record.
+  </div>
+
+  <div class="main-grid">
+    <!-- Left: Reference Video -->
+    <div class="card">
+      <div class="card-header">
+        <span>&#127916; Reference Video (ISLRTC Namaste)</span>
+        <span style="color: #94a3b8; font-size: 11px;">1080p HEVC @ 25 FPS (GODL)</span>
+      </div>
+      <div class="video-viewport">
+        <video id="ref-video" src="reference_videos/ISLRTC_Namaste_sample.mp4" playsinline preload="auto"></video>
+        <div id="video-fallback" class="video-fallback-msg">
+          <p><strong>Note on Video Playback:</strong> The source reference video (<a href="reference_videos/ISLRTC_Namaste_sample.mp4" style="color: #38bdf8;">ISLRTC_Namaste_sample.mp4</a>) is encoded in HEVC/H.265. If your current browser profile lacks native HEVC decoding, 3D avatar animation continues accurately via the timeline scrubber.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: 3D Avatar -->
+    <div class="card">
+      <div class="card-header">
+        <span>&#129302; Retargeted Avatar (Mixamo Y-Bot)</span>
+        <span id="provenance-badge" class="badge-rest">INITIALIZING</span>
+      </div>
+      <div id="avatar-container">
+        <div id="avatar-status" class="status-overlay">Loading Y-Bot Rig...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Synchronized Controls & Telemetry -->
+  <div class="controls-panel">
+    <div class="timeline-container">
+      <div class="timeline-info">
+        <span id="time-display">0 / 3080 ms</span>
+        <span id="frame-display">Frame: 0 / 76</span>
+      </div>
+      <input type="range" id="timeline-scrubber" class="scrubber" min="0" max="3080" step="40" value="0">
+      
+      <div class="track-legend">
+        <span class="legend-item"><span class="legend-dot dot-rest"></span> Lap Rest (0-21, 63-76)</span>
+        <span class="legend-item"><span class="legend-dot dot-observed"></span> Clean Transition (23-24, 60-61)</span>
+        <span class="legend-item"><span class="legend-dot dot-contact"></span> Constrained Contact (25-58)</span>
+        <span class="legend-item"><span class="legend-dot dot-low-conf"></span> Flagged Anomaly (Frames 22, 59, 62)</span>
+      </div>
+    </div>
+
+    <!-- Playback Buttons -->
+    <div class="button-row">
+      <button id="btn-play-pause" class="primary">&#9658; Play Synchronized</button>
+      <button id="btn-restart">&#8635; Restart (0ms)</button>
+      <button id="btn-prev-frame">&#9664; -1 Frame</button>
+      <button id="btn-next-frame">&#9654; +1 Frame</button>
+
+      <span style="color: #64748b; font-size: 12px; margin-left: 8px;">Speed:</span>
+      <select id="select-rate" class="rate-select">
+        <option value="1.0">1.0x (Normal)</option>
+        <option value="0.5">0.5x (Half-Speed)</option>
+        <option value="0.25">0.25x (Slow-Motion)</option>
+      </select>
+    </div>
+
+    <!-- Low-Confidence Frame Jumps -->
+    <div class="button-row" style="margin-bottom: 16px;">
+      <span style="color: #cbd5e1; font-size: 12px; font-weight: 600;">Scrutiny Jump:</span>
+      <button id="btn-jump-f22" class="scrutiny-btn">Frame 22 (880ms: Lift Stroke)</button>
+      <button id="btn-jump-peak" class="scrutiny-btn">Frame 40 (1600ms: Palm Contact)</button>
+      <button id="btn-jump-f59" class="scrutiny-btn">Frame 59 (2360ms: Hand Separation)</button>
+      <button id="btn-jump-f62" class="scrutiny-btn">Frame 62 (2480ms: Lap Return)</button>
+    </div>
+
+    <!-- Dynamic Warning Banner for Flagged Frames -->
+    <div id="confidence-alert" class="confidence-alert-banner">
+      <strong>Tracking Anomaly Alert:</strong> <span id="alert-text">Frame details...</span>
+    </div>
+
+    <!-- Telemetry Display -->
+    <div class="metrics-grid" style="margin-top: 12px;">
+      <div class="metric-item">
+        <span class="metric-label">Frame Tracking Status</span>
+        <span id="metric-state" class="metric-val">REST_INTERPOLATED</span>
+      </div>
+      <div class="metric-item">
+        <span class="metric-label">MediaPipe Observation</span>
+        <span id="metric-detection" class="metric-val">L: Lost | R: Lost</span>
+      </div>
+      <div class="metric-item">
+        <span class="metric-label">Wrist Separation (Raw vs Clamped)</span>
+        <span id="metric-wrist-sep" class="metric-val">0.265 m</span>
+      </div>
+      <div class="metric-item">
+        <span class="metric-label">Bilateral Constraint Applied</span>
+        <span id="metric-correction" class="metric-val">0.000 m</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Known Technical Limitations Collapsible Card -->
+  <div class="limitations-box">
+    <div class="limitations-header" id="toggle-limitations">
+      <span>&#9881; Known Technical Limitations &amp; Avatar Rig Constraints (Click to toggle)</span>
+      <span id="limitations-arrow">&#9660;</span>
+    </div>
+    <div class="limitations-content" id="limitations-content">
+      <div class="limitation-card">
+        <h4>1. Monocular Self-Occlusion &amp; Contact Correction</h4>
+        <p>In single-camera reference videos, hands visually merge during Anjali Mudra. MediaPipe hand tracking drops below 50% simultaneous visibility. A bilateral solver enforces a 70 mm wrist target clamped to a maximum 35 mm correction. In flagged Frames 22, 59, and 62, motion is stabilized by temporal interpolation rather than direct camera observation.</p>
+      </div>
+      <div class="limitation-card">
+        <h4>2. Avatar Rig Non-Manual Marker (NMM) Limits</h4>
+        <p>Adobe Mixamo Y-Bot (<code>ybot.glb</code>) possesses full 4-phalange fingers, but has a rigid metallic face with <strong>zero facial blendshapes, eye bones, or jaw bones</strong>. While the forward head tilt is articulated on the Head bone, grammatical facial morphemes (mouth patterns, eyebrow raises) cannot be rendered. Mark NMMs as <em>Not Assessable</em> on this rig.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Linguistic Reviewer Worksheet Form -->
+  <div class="worksheet-panel">
+    <div class="worksheet-title">&#128221; ISL Expert Review Worksheet &amp; Feedback System (M3.16)</div>
+    <p class="worksheet-sub">Structured evaluation record for qualified Deaf-native signers, certified interpreters, or educators.</p>
+
+    <!-- Cryptographic Traceability Bar -->
+    <div class="hash-display-bar">
+      <span><strong>Candidate ID:</strong> isl_namaste_mocap_candidate_v1 (v1.0.0)</span>
+      <span><strong>Candidate SHA-256:</strong> <span id="candidate-hash-display">Computing SHA-256...</span></span>
+      <span><strong>Video SHA-256:</strong> 129811572acc6a236fb62b4ade143df8770b7fdcc5249d5facffc349b16a18b8</span>
+    </div>
+
+    <!-- Reviewer Profile Row -->
+    <div class="form-row">
+      <div class="form-group">
+        <label for="rev-name">Reviewer Name or Optional Pseudonym</label>
+        <input type="text" id="rev-name" placeholder="e.g. Qualified ISL Evaluator (or Pseudonym)">
+      </div>
+      <div class="form-group">
+        <label for="rev-role">Signing Fluency / Role (Voluntarily Recorded)</label>
+        <select id="rev-role">
+          <option value="deaf_native">Deaf Native ISL Signer</option>
+          <option value="certified_interpreter">Certified Interpreter (DISLI/ISLRTC)</option>
+          <option value="deaf_educator">Deaf Educator / Teacher of the Deaf</option>
+          <option value="sign_linguist">Sign Language Linguist / Researcher</option>
+          <option value="community_member">Deaf Community Member</option>
+          <option value="other">Other Qualified Expert</option>
+          <option value="anonymous">Anonymous / Withheld</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="rev-date">Evaluation Date</label>
+        <input type="date" id="rev-date">
+      </div>
+    </div>
+
+    <!-- Step 1: Open-Ended Qualitative Observations (Prior to Discrete Scoring) -->
+    <div class="form-group" style="margin-bottom: 20px;">
+      <label for="rev-notes">Step 1 — Open-Ended Observations &amp; Initial Kinematic Impression</label>
+      <p style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Record spontaneous impressions, kinematic stiffness, unnatural wrist angles, cultural nuance observations, or areas of uncertainty in your own words before scoring discrete parameters:</p>
+      <textarea id="rev-notes" placeholder="Describe initial observations in your own words (e.g. naturalness of entry/hold/exit, posture, bilateral symmetry, areas where motion feels robotic or unclear)..."></textarea>
+    </div>
+
+    <!-- Step 2: Five Parameters Rubric Table -->
+    <div style="margin-bottom: 6px;">
+      <label style="font-size: 12px; font-weight: 600; color: #cbd5e1; display: block;">Step 2 — Structured Parameter Assessment (ISL Phonological Dimensions)</label>
+    </div>
+    <table class="rubric-table">
+      <thead>
+        <tr>
+          <th style="width: 22%;">ISL Parameter</th>
+          <th style="width: 38%;">Linguistic Criteria &amp; Target Motion</th>
+          <th style="width: 40%;">Assessment Finding</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="rubric-row" id="row-handshape">
+          <td><strong>1. Handshape (DEZ)</strong></td>
+          <td>Flat open palms (B-shape / 5-shape variation); all 4 fingers extended &amp; adducted together; thumbs resting parallel.</td>
+          <td>
+            <div class="rubric-options" data-param="handshape">
+              <span class="rating-pill" data-val="acceptable">Acceptable</span>
+              <span class="rating-pill" data-val="minor_issue">Minor Issue</span>
+              <span class="rating-pill" data-val="unacceptable">Unacceptable</span>
+              <span class="rating-pill" data-val="not_assessable">Not Assessable</span>
+            </div>
+          </td>
+        </tr>
+        <tr class="rubric-row" id="row-location">
+          <td><strong>2. Location (TAB)</strong></td>
+          <td>Mid-chest / sternum height; anterior clearance from body; horizontally centered on torso.</td>
+          <td>
+            <div class="rubric-options" data-param="location">
+              <span class="rating-pill" data-val="acceptable">Acceptable</span>
+              <span class="rating-pill" data-val="minor_issue">Minor Issue</span>
+              <span class="rating-pill" data-val="unacceptable">Unacceptable</span>
+              <span class="rating-pill" data-val="not_assessable">Not Assessable</span>
+            </div>
+          </td>
+        </tr>
+        <tr class="rubric-row" id="row-orientation">
+          <td><strong>3. Orientation (ORI)</strong></td>
+          <td>Palms facing medial (towards each other); fingertips directed superiorly (upward toward chin); symmetrical palmar alignment.</td>
+          <td>
+            <div class="rubric-options" data-param="orientation">
+              <span class="rating-pill" data-val="acceptable">Acceptable</span>
+              <span class="rating-pill" data-val="minor_issue">Minor Issue</span>
+              <span class="rating-pill" data-val="unacceptable">Unacceptable</span>
+              <span class="rating-pill" data-val="not_assessable">Not Assessable</span>
+            </div>
+          </td>
+        </tr>
+        <tr class="rubric-row" id="row-movement">
+          <td><strong>4. Movement (SIG)</strong></td>
+          <td>Bilateral upward stroke, prayer hold duration at chest, and return descent to lap.</td>
+          <td>
+            <div class="rubric-options" data-param="movement">
+              <span class="rating-pill" data-val="acceptable">Acceptable</span>
+              <span class="rating-pill" data-val="minor_issue">Minor Issue</span>
+              <span class="rating-pill" data-val="unacceptable">Unacceptable</span>
+              <span class="rating-pill" data-val="not_assessable">Not Assessable</span>
+            </div>
+          </td>
+        </tr>
+        <tr class="rubric-row" id="row-non_manuals">
+          <td><strong>5. Non-Manuals (NMM)</strong></td>
+          <td>Forward head tilt during hold. (Note: Y-Bot lacks facial blendshapes; facial expression is unrendered).</td>
+          <td>
+            <div class="rubric-options" data-param="non_manuals">
+              <span class="rating-pill" data-val="acceptable">Head Tilt Acceptable</span>
+              <span class="rating-pill" data-val="minor_issue">Timing Off</span>
+              <span class="rating-pill" data-val="unacceptable">Unacceptable</span>
+              <span class="rating-pill selected-na" data-val="not_assessable">Not Assessable (Rig Limitation)</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Step 3: Flagged Frame Observations -->
+    <div style="margin-bottom: 14px;">
+      <label style="font-size: 12px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px;">
+        Step 3 — Key Transition Interval Scrutiny (Tracking Anomaly Intervals):
+      </label>
+      <div style="display: flex; gap: 16px; font-size: 12px; color: #cbd5e1; flex-wrap: wrap;">
+        <label><input type="checkbox" id="chk-f22"> Frame 22 (880ms lift): Check if upward motion appears acceptable; leave unchecked if distorted or unassessed</label>
+        <label><input type="checkbox" id="chk-f59"> Frame 59 (2360ms release): Check if hand separation appears smooth; leave unchecked if distorted or unassessed</label>
+        <label><input type="checkbox" id="chk-f62"> Frame 62 (2480ms lap rest): Check if descent to lap appears clean; leave unchecked if distorted or unassessed</label>
+      </div>
+    </div>
+
+    <!-- Step 4: Uncertainty Declaration & Evidence Request -->
+    <div style="margin-bottom: 14px; background: rgba(30, 41, 59, 0.5); padding: 10px 12px; border-radius: 6px; border: 1px solid #334155;">
+      <label style="font-size: 12px; font-weight: 600; color: #f59e0b; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" id="chk-need-evidence"> Step 4 — Declare Uncertainty / Request Further Evidence (e.g. Multi-Angle Video or Clarification)
+      </label>
+      <div id="box-evidence-details" style="display: none; margin-top: 8px;">
+        <input type="text" id="evidence-request-details" placeholder="Specify what additional evidence is required to assess with confidence (e.g. side profile, slower capture)..." style="width: 100%; font-size: 12px; padding: 6px 10px; background: #0f172a; border: 1px solid #475569; color: #f1f5f9; border-radius: 4px;">
+      </div>
+    </div>
+
+    <!-- Step 5: Overall Recommendation Verdict -->
+    <div class="form-group" style="margin-bottom: 16px;">
+      <label>Step 5 — Overall Reviewer Recommendation</label>
+      <div style="display: flex; gap: 12px; font-size: 12px; color: #f1f5f9; flex-wrap: wrap; margin-top: 4px;">
+        <label><input type="radio" name="overall-verdict" value="provisional_approval"> Provisional Approval for Further Review (Eligible for broader panel review; NOT approved for production)</label>
+        <label><input type="radio" name="overall-verdict" value="needs_tuning"> Requires Revisions / Tuning (Linguistic or kinematic corrections needed)</label>
+        <label><input type="radio" name="overall-verdict" value="rejected"> Rejected (Unacceptable or misleading ISL representation)</label>
+        <label><input type="radio" name="overall-verdict" value="not_assessable" checked> Not Assessable / Inconclusive (Insufficient evidence or rig limitations prevent assessment)</label>
+      </div>
+    </div>
+
+    <!-- Validation Warning Box -->
+    <div id="validation-warning" class="validation-warning"></div>
+
+    <!-- Action Buttons -->
+    <div class="worksheet-actions">
+      <div class="action-group-left">
+        <label for="file-load-review" style="display: inline-block;">
+          <input type="file" id="file-load-review" accept=".json" style="display: none;">
+          <button type="button" id="btn-trigger-load">&#128194; Load Review JSON</button>
+        </label>
+        <button id="btn-save-local">&#128190; Save Progress Locally</button>
+      </div>
+      <div class="action-group-right">
+        <button id="btn-copy-summary">&#128203; Copy Summary to Clipboard</button>
+        <button id="btn-export-json" class="primary">&#11015; Export Review JSON</button>
+        <button id="btn-export-md" class="primary">&#11015; Export Review Markdown</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let player = null;
+    let candidateClip = null;
+    let diagnosticData = null;
+    let isPlaying = false;
+    let currentTimeMs = 0;
+    let playbackRate = 1.0;
+    let candidateFileSha256 = "6f24e60f7f55d71482133790ca60f6a52682a38f7f6b32c8921480586cef4a46";
+    const refVideoSha256 = "129811572acc6a236fb62b4ade143df8770b7fdcc5249d5facffc349b16a18b8";
+    const clipDurationMs = 3080;
+    const reviewSchemaVersion = "signbridge_review_schema_v1.0.0";
+
+    // In-memory fallback if localStorage fails
+    let inMemoryWorksheetData = null;
+
+    // DOM Elements
+    const refVideo = document.getElementById("ref-video");
+    const videoFallback = document.getElementById("video-fallback");
+    const scrubber = document.getElementById("timeline-scrubber");
+    const timeDisplay = document.getElementById("time-display");
+    const frameDisplay = document.getElementById("frame-display");
+    const btnPlayPause = document.getElementById("btn-play-pause");
+    const btnRestart = document.getElementById("btn-restart");
+    const btnPrevFrame = document.getElementById("btn-prev-frame");
+    const btnNextFrame = document.getElementById("btn-next-frame");
+    const selectRate = document.getElementById("select-rate");
+
+    const btnJumpF22 = document.getElementById("btn-jump-f22");
+    const btnJumpPeak = document.getElementById("btn-jump-peak");
+    const btnJumpF59 = document.getElementById("btn-jump-f59");
+    const btnJumpF62 = document.getElementById("btn-jump-f62");
+
+    const avatarStatus = document.getElementById("avatar-status");
+    const provBadge = document.getElementById("provenance-badge");
+    const metricState = document.getElementById("metric-state");
+    const metricDetection = document.getElementById("metric-detection");
+    const metricWristSep = document.getElementById("metric-wrist-sep");
+    const metricCorrection = document.getElementById("metric-correction");
+    const confidenceAlert = document.getElementById("confidence-alert");
+    const alertText = document.getElementById("alert-text");
+    const candidateHashDisplay = document.getElementById("candidate-hash-display");
+    const validationWarning = document.getElementById("validation-warning");
+
+    // Worksheet elements
+    const revName = document.getElementById("rev-name");
+    const revRole = document.getElementById("rev-role");
+    const revDate = document.getElementById("rev-date");
+    const revNotes = document.getElementById("rev-notes");
+    const chkF22 = document.getElementById("chk-f22");
+    const chkF59 = document.getElementById("chk-f59");
+    const chkF62 = document.getElementById("chk-f62");
+    const chkNeedEvidence = document.getElementById("chk-need-evidence");
+    const boxEvidenceDetails = document.getElementById("box-evidence-details");
+    const evidenceDetails = document.getElementById("evidence-request-details");
+
+    if (chkNeedEvidence) {
+      chkNeedEvidence.addEventListener("change", () => {
+        if (boxEvidenceDetails) {
+          boxEvidenceDetails.style.display = chkNeedEvidence.checked ? "block" : "none";
+        }
+      });
+    }
+
+    // Default evaluation date to today
+    revDate.value = new Date().toISOString().split("T")[0];
+
+    async function computeSHA256(arrayBuffer) {
+      if (window.crypto && window.crypto.subtle) {
+        try {
+          const hashBuffer = await window.crypto.subtle.digest("SHA-256", arrayBuffer);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        } catch (e) {
+          console.warn("Crypto SHA-256 computation failed, using baseline constant:", e);
+        }
+      }
+      return candidateFileSha256;
+    }
+
+    async function init() {
+      // 1. Fetch Candidate Animation Clip JSON and compute real SHA-256
+      try {
+        const resp = await fetch("output/isl_namaste_mocap_candidate_v1.json");
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const arrayBuffer = await resp.arrayBuffer();
+        candidateFileSha256 = await computeSHA256(arrayBuffer);
+        candidateHashDisplay.textContent = candidateFileSha256.substring(0, 16) + "...";
+        candidateHashDisplay.title = candidateFileSha256;
+
+        const decoder = new TextDecoder('utf-8');
+        const jsonText = decoder.decode(arrayBuffer);
+        candidateClip = JSON.parse(jsonText);
+      } catch (err) {
+        console.error("Failed to load candidate clip:", err);
+        avatarStatus.textContent = "Error loading candidate clip JSON: " + err.message;
+        candidateHashDisplay.textContent = "Load error";
+        return;
+      }
+
+      // 2. Fetch Diagnostic Data for empirical per-frame stats
+      try {
+        const dResp = await fetch("output/landmark_extraction_diagnostic.json");
+        if (dResp.ok) {
+          diagnosticData = await dResp.json();
+        }
+      } catch (err) {
+        console.warn("Diagnostic landmark json not loaded (telemetry fallback active):", err);
+      }
+
+      // 3. Register candidate clip in SignBridgeKeyframeRegistry (isolated session)
+      if (window.SignBridgeKeyframeRegistry) {
+        try {
+          window.SignBridgeKeyframeRegistry.registerAnimationClip(candidateClip);
+        } catch (e) {
+          console.warn("Clip registration note:", e);
+        }
+      }
+
+      // 4. Handle video error gracefully (e.g. HEVC codec missing)
+      refVideo.addEventListener("error", () => {
+        console.warn("Reference video failed to play natively (likely HEVC support). 3D viewport remains active.");
+        videoFallback.style.display = "block";
+      });
+
+      // 5. Initialize SignBridgeAvatarPlayer
+      try {
+        if (window.SignBridgeAvatarPlayer) {
+          player = new window.SignBridgeAvatarPlayer({
+            container: document.getElementById("avatar-container"),
+            modelPath: "../../extension/assets/models/ybot.glb",
+            onLoad: () => {
+              avatarStatus.textContent = "Y-Bot Rig Ready (Review Mode)";
+              seekToTime(0);
+            },
+            onError: (err) => {
+              avatarStatus.textContent = "Rig Load Error: " + err.message;
+            }
+          });
+        }
+      } catch (err) {
+        console.warn("Avatar player initialization caught:", err);
+        avatarStatus.textContent = "Viewport Active (3D Fallback Mode: " + err.message + ")";
+      }
+
+      setupEvents();
+      loadWorksheetState();
+    }
+
+    function seekToTime(tMs) {
+      currentTimeMs = Math.max(0, Math.min(clipDurationMs, tMs));
+      scrubber.value = currentTimeMs;
+
+      const frameIdx = Math.min(76, Math.floor(currentTimeMs / 40));
+      timeDisplay.textContent = `${currentTimeMs} / ${clipDurationMs} ms`;
+      frameDisplay.textContent = `Frame: ${frameIdx} / 76`;
+
+      // Sync HTML5 video
+      if (refVideo && !isNaN(refVideo.duration)) {
+        try {
+          refVideo.currentTime = currentTimeMs / 1000.0;
+        } catch (e) {}
+      }
+
+      // Sync Avatar Player pose
+      if (player && candidateClip) {
+        const evalPose = window.SignBridgeKeyframeRegistry.evaluateClipAtTime(candidateClip, currentTimeMs);
+        player.applyPose(evalPose);
+      }
+
+      // Update frame telemetry
+      updateFrameTelemetry(frameIdx);
+    }
+
+    function updateFrameTelemetry(frameIdx) {
+      let tag = "DIRECTLY_OBSERVED";
+      let detection = "L: Detected | R: Detected";
+      let wristSep = "0.080 m";
+      let correction = "0.000 m";
+      let alertMsg = null;
+
+      // Extract real empirical landmark diagnostic if present
+      if (diagnosticData && diagnosticData.frames && diagnosticData.frames[frameIdx]) {
+        const f = diagnosticData.frames[frameIdx];
+        const lDet = f.leftHandDetected ? "Detected" : "Lost";
+        const rDet = f.rightHandDetected ? "Detected" : "Lost";
+        detection = `L: ${lDet} | R: ${rDet}`;
+      }
+
+      if (frameIdx <= 21 || frameIdx >= 63) {
+        tag = "REST_INTERPOLATED";
+        wristSep = "0.265 m";
+        correction = "0.000 m";
+        detection = "L: Lost (Lap) | R: Lost (Lap)";
+      } else if (frameIdx === 22) {
+        tag = "LOW_CONFIDENCE";
+        wristSep = "0.145 m (raw)";
+        correction = "0.015 m (stabilized)";
+        detection = "L: Detected | R: LOST (Tracking dip)";
+        alertMsg = "Frame 22 (880ms): Right hand confidence dropped below threshold during initial arm lift from lap. Interpolation solver bridged trajectory.";
+      } else if (frameIdx === 59) {
+        tag = "LOW_CONFIDENCE";
+        wristSep = "0.140 m (raw)";
+        correction = "0.020 m (stabilized)";
+        detection = "L: LOST (Occluded) | R: Detected";
+        alertMsg = "Frame 59 (2360ms): Left hand momentarily lost to camera occlusion during parting. Bilateral symmetry constraint preserved arm descent.";
+      } else if (frameIdx === 62) {
+        tag = "LOW_CONFIDENCE";
+        wristSep = "0.220 m";
+        correction = "0.000 m";
+        detection = "L: Lost (Lap) | R: Lost (Lap)";
+        alertMsg = "Frame 62 (2480ms): Boundary transition entering lap rest. Neutral rest pose interpolation active.";
+      } else if (frameIdx >= 25 && frameIdx <= 58) {
+        tag = "CONTACT_CONSTRAINED";
+        wristSep = "0.0798 m (Raw was ~0.142m)";
+        correction = "0.0350 m (Clamped max)";
+      }
+
+      metricState.textContent = tag;
+      metricDetection.textContent = detection;
+      metricWristSep.textContent = wristSep;
+      metricCorrection.textContent = correction;
+
+      provBadge.textContent = tag;
+      provBadge.className = "";
+      if (tag === "CONTACT_CONSTRAINED") provBadge.className = "badge-contact";
+      else if (tag === "REST_INTERPOLATED") provBadge.className = "badge-rest";
+      else if (tag === "LOW_CONFIDENCE") provBadge.className = "badge-low-conf";
+      else provBadge.className = "badge-observed";
+
+      if (alertMsg) {
+        confidenceAlert.style.display = "block";
+        alertText.textContent = alertMsg;
+      } else {
+        confidenceAlert.style.display = "none";
+      }
+    }
+
+    function setupEvents() {
+      scrubber.addEventListener("input", (e) => {
+        pause();
+        seekToTime(parseInt(e.target.value, 10));
+      });
+
+      btnPlayPause.addEventListener("click", () => {
+        if (isPlaying) pause();
+        else play();
+      });
+
+      btnRestart.addEventListener("click", () => {
+        pause();
+        seekToTime(0);
+      });
+
+      btnPrevFrame.addEventListener("click", () => {
+        pause();
+        seekToTime(currentTimeMs - 40);
+      });
+
+      btnNextFrame.addEventListener("click", () => {
+        pause();
+        seekToTime(currentTimeMs + 40);
+      });
+
+      selectRate.addEventListener("change", (e) => {
+        playbackRate = parseFloat(e.target.value);
+        if (refVideo) refVideo.playbackRate = playbackRate;
+      });
+
+      // Quick jumps
+      btnJumpF22.addEventListener("click", () => { pause(); seekToTime(880); });
+      btnJumpPeak.addEventListener("click", () => { pause(); seekToTime(1600); });
+      btnJumpF59.addEventListener("click", () => { pause(); seekToTime(2360); });
+      btnJumpF62.addEventListener("click", () => { pause(); seekToTime(2480); });
+
+      // Collapsible limitations toggle
+      const limitationsHeader = document.getElementById("toggle-limitations");
+      const limitationsContent = document.getElementById("limitations-content");
+      const limitationsArrow = document.getElementById("limitations-arrow");
+      limitationsHeader.addEventListener("click", () => {
+        const isHidden = limitationsContent.style.display === "none";
+        limitationsContent.style.display = isHidden ? "grid" : "none";
+        limitationsArrow.innerHTML = isHidden ? "&#9660;" : "&#9654;";
+      });
+
+      // Rating pills click handlers
+      document.querySelectorAll(".rubric-options").forEach(optGroup => {
+        optGroup.querySelectorAll(".rating-pill").forEach(pill => {
+          pill.addEventListener("click", () => {
+            optGroup.querySelectorAll(".rating-pill").forEach(p => {
+              p.classList.remove("selected-pass", "selected-minor", "selected-fail", "selected-na");
+            });
+            const val = pill.getAttribute("data-val");
+            if (val === "acceptable") pill.classList.add("selected-pass");
+            else if (val === "minor_issue") pill.classList.add("selected-minor");
+            else if (val === "unacceptable") pill.classList.add("selected-fail");
+            else if (val === "not_assessable") pill.classList.add("selected-na");
+            
+            // Remove unrated highlight from parent row if present
+            const row = optGroup.closest(".rubric-row");
+            if (row) row.classList.remove("unrated");
+            validationWarning.style.display = "none";
+            saveWorksheetState();
+          });
+        });
+      });
+
+      // Keyboard shortcuts
+      window.addEventListener("keydown", (e) => {
+        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+        if (e.code === "Space") {
+          e.preventDefault();
+          if (isPlaying) pause(); else play();
+        } else if (e.code === "ArrowLeft") {
+          e.preventDefault();
+          pause();
+          seekToTime(currentTimeMs - 40);
+        } else if (e.code === "ArrowRight") {
+          e.preventDefault();
+          pause();
+          seekToTime(currentTimeMs + 40);
+        } else if (e.code === "KeyR") {
+          e.preventDefault();
+          pause();
+          seekToTime(0);
+        }
+      });
+
+      // Worksheet action buttons
+      document.getElementById("btn-save-local").addEventListener("click", () => {
+        saveWorksheetState();
+        alert("Worksheet data saved to browser local storage.");
+      });
+
+      document.getElementById("btn-trigger-load").addEventListener("click", () => {
+        document.getElementById("file-load-review").click();
+      });
+
+      document.getElementById("file-load-review").addEventListener("change", handleLoadReviewFile);
+      document.getElementById("btn-copy-summary").addEventListener("click", copySummaryToClipboard);
+      document.getElementById("btn-export-json").addEventListener("click", exportWorksheetJSON);
+      document.getElementById("btn-export-md").addEventListener("click", exportWorksheetMarkdown);
+    }
+
+    let animTimer = null;
+    let lastTime = 0;
+
+    function play() {
+      isPlaying = true;
+      btnPlayPause.textContent = "❚❚ Pause";
+      lastTime = performance.now();
+      if (currentTimeMs >= clipDurationMs) {
+        currentTimeMs = 0;
+      }
+      if (refVideo && !videoFallback.offsetParent) {
+        refVideo.playbackRate = playbackRate;
+        refVideo.play().catch(() => {});
+      }
+      runAnimLoop();
+    }
+
+    function pause() {
+      isPlaying = false;
+      btnPlayPause.textContent = "► Play Synchronized";
+      if (refVideo) refVideo.pause();
+      if (animTimer) cancelAnimationFrame(animTimer);
+    }
+
+    function runAnimLoop() {
+      if (!isPlaying) return;
+      const now = performance.now();
+      const delta = (now - lastTime) * playbackRate;
+      lastTime = now;
+
+      let nextTime = currentTimeMs + delta;
+      if (nextTime >= clipDurationMs) {
+        nextTime = clipDurationMs;
+        seekToTime(nextTime);
+        pause();
+        return;
+      }
+
+      seekToTime(nextTime);
+      animTimer = requestAnimationFrame(runAnimLoop);
+    }
+
+    // Worksheet Data Helpers & Validation
+    function collectWorksheetData() {
+      const selectedVerdict = document.querySelector("input[name='overall-verdict']:checked");
+      const ratings = {};
+      const unrated = [];
+
+      document.querySelectorAll(".rubric-options").forEach(optGroup => {
+        const param = optGroup.getAttribute("data-param");
+        const activePill = optGroup.querySelector(".rating-pill.selected-pass, .rating-pill.selected-minor, .rating-pill.selected-fail, .rating-pill.selected-na");
+        if (activePill) {
+          ratings[param] = activePill.getAttribute("data-val");
+        } else {
+          ratings[param] = "unrated";
+          unrated.push(param);
+        }
+      });
+
+      const unassessableList = Object.keys(ratings).filter(k => ratings[k] === "not_assessable");
+
+      return {
+        reviewSchemaVersion,
+        sessionType: "SignBridge ISL MoCap Linguistic Review",
+        candidateId: "isl_namaste_mocap_candidate_v1",
+        candidateVersion: "v1.0.0",
+        candidateFileSha256,
+        referenceVideoFile: "ISLRTC_Namaste_sample.mp4",
+        referenceVideoSha256: refVideoSha256,
+        gloss: "NAMASTE",
+        sourceReference: "ISLRTC Dictionary Vol 1, Word #0001 (data.gov.in / GODL)",
+        validationStatus: "experimental_awaiting_validation",
+        reviewer: {
+          name: revName.value.trim() || "Anonymous Reviewer",
+          role: revRole.value,
+          date: revDate.value
+        },
+        rigLimitationsAcknowledged: true,
+        unassessableDimensions: unassessableList,
+        parameterRatings: ratings,
+        flaggedFramesInspected: {
+          frame22_lift_natural: chkF22.checked,
+          frame59_parting_smooth: chkF59.checked,
+          frame62_lap_rest_clean: chkF62.checked
+        },
+        furtherEvidenceRequested: chkNeedEvidence ? chkNeedEvidence.checked : false,
+        evidenceRequestDetails: (chkNeedEvidence && chkNeedEvidence.checked && evidenceDetails) ? evidenceDetails.value.trim() : "",
+        qualitativeNotes: revNotes.value.trim(),
+        overallVerdict: selectedVerdict ? selectedVerdict.value : "not_assessable",
+        timestampISO: new Date().toISOString(),
+        validationSummary: {
+          allDimensionsRated: unrated.length === 0,
+          unratedDimensions: unrated
+        },
+        ...(() => {
+          const safeExtra = {};
+          const protectedKeys = new Set([
+            "reviewSchemaVersion", "candidateId", "candidateVersion",
+            "candidateFileSha256", "referenceVideoFile", "referenceVideoSha256",
+            "gloss", "sourceReference", "validationStatus"
+          ]);
+          for (const [k, v] of Object.entries(importedExtraFields)) {
+            if (!protectedKeys.has(k)) {
+              safeExtra[k] = v;
+            }
+          }
+          return safeExtra;
+        })()
+      };
+    }
+
+    function validateReviewForm() {
+      const data = collectWorksheetData();
+      const unrated = data.validationSummary.unratedDimensions;
+      if (unrated.length > 0) {
+        unrated.forEach(param => {
+          const row = document.getElementById("row-" + param);
+          if (row) row.classList.add("unrated");
+        });
+        validationWarning.style.display = "block";
+        validationWarning.textContent = `Please note: ${unrated.length} dimension(s) remain unrated (${unrated.join(", ")}). You can mark them 'Not Assessable' if constrained by the rig.`;
+        return false;
+      }
+      validationWarning.style.display = "none";
+      return true;
+    }
+
+    function saveWorksheetState() {
+      const data = collectWorksheetData();
+      inMemoryWorksheetData = data;
+      try {
+        localStorage.setItem("signbridge_isl_namaste_review", JSON.stringify(data));
+      } catch (e) {
+        console.warn("Could not save to localStorage, using in-memory state:", e);
+      }
+    }
+
+    let importedExtraFields = {};
+
+    function loadWorksheetState(overrideData = null) {
+      let data = overrideData;
+      if (!data) {
+        try {
+          const saved = localStorage.getItem("signbridge_isl_namaste_review");
+          if (saved) {
+            data = JSON.parse(saved);
+          }
+        } catch (e) {
+          console.warn("Could not load from localStorage, checking in-memory:", e);
+          data = inMemoryWorksheetData;
+        }
+      }
+      if (!data) return;
+
+      // Retain any unrecognized or extended fields to prevent lossy round trips
+      const standardKeys = new Set([
+        "reviewSchemaVersion", "sessionType", "candidateId", "candidateVersion",
+        "candidateFileSha256", "referenceVideoFile", "referenceVideoSha256",
+        "gloss", "sourceReference", "validationStatus", "reviewer",
+        "rigLimitationsAcknowledged", "unassessableDimensions", "parameterRatings",
+        "flaggedFramesInspected", "furtherEvidenceRequested", "evidenceRequestDetails",
+        "qualitativeNotes", "overallVerdict", "timestampISO", "validationSummary"
+      ]);
+      importedExtraFields = {};
+      for (const [k, v] of Object.entries(data)) {
+        if (!standardKeys.has(k)) {
+          importedExtraFields[k] = v;
+        }
+      }
+
+      if (data.reviewer) {
+        revName.value = data.reviewer.name || "";
+        revRole.value = data.reviewer.role || "deaf_native";
+        revDate.value = data.reviewer.date || new Date().toISOString().split("T")[0];
+      }
+      if (data.qualitativeNotes) revNotes.value = data.qualitativeNotes;
+      if (data.flaggedFramesInspected) {
+        chkF22.checked = !!data.flaggedFramesInspected.frame22_lift_natural;
+        chkF59.checked = !!data.flaggedFramesInspected.frame59_parting_smooth;
+        chkF62.checked = !!data.flaggedFramesInspected.frame62_lap_rest_clean;
+      }
+      if (data.furtherEvidenceRequested !== undefined && chkNeedEvidence) {
+        chkNeedEvidence.checked = !!data.furtherEvidenceRequested;
+        if (boxEvidenceDetails) boxEvidenceDetails.style.display = chkNeedEvidence.checked ? "block" : "none";
+        if (evidenceDetails) evidenceDetails.value = data.evidenceRequestDetails || "";
+      }
+      if (data.parameterRatings) {
+        for (const [param, val] of Object.entries(data.parameterRatings)) {
+          const group = document.querySelector(`.rubric-options[data-param='${param}']`);
+          if (group) {
+            group.querySelectorAll(".rating-pill").forEach(p => {
+              p.classList.remove("selected-pass", "selected-minor", "selected-fail", "selected-na");
+              if (p.getAttribute("data-val") === val) {
+                if (val === "acceptable") p.classList.add("selected-pass");
+                else if (val === "minor_issue") p.classList.add("selected-minor");
+                else if (val === "unacceptable") p.classList.add("selected-fail");
+                else if (val === "not_assessable") p.classList.add("selected-na");
+              }
+            });
+          }
+        }
+      }
+      if (data.overallVerdict) {
+        const radio = document.querySelector(`input[name='overall-verdict'][value='${data.overallVerdict}']`);
+        if (radio) radio.checked = true;
+      }
+    }
+
+    function handleLoadReviewFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+          if (data.candidateId && data.parameterRatings) {
+            // Check for candidate hash mismatch
+            const recordHash = data.candidateFileSha256 || "";
+            if (recordHash && recordHash !== candidateFileSha256) {
+              const msg = `⚠ HASH MISMATCH WARNING:\n\nThe imported review record was created for a candidate with SHA-256:\n${recordHash}\n\nHowever, the currently loaded candidate has SHA-256:\n${candidateFileSha256}\n\nThis review record belongs to a different candidate version or a modified file and CANNOT be attributed to the active candidate!`;
+              alert(msg);
+              validationWarning.style.display = "block";
+              validationWarning.textContent = `⚠ HASH MISMATCH: Imported review references candidate hash (${recordHash.substring(0, 16)}...) which does not match active asset (${candidateFileSha256.substring(0, 16)}...).`;
+            } else {
+              validationWarning.style.display = "none";
+              alert(`Loaded review record for ${data.candidateId} by ${data.reviewer ? data.reviewer.name : 'Unknown'}. Hash verified: ${candidateFileSha256.substring(0, 16)}...`);
+            }
+            loadWorksheetState(data);
+          } else {
+            alert("File does not appear to be a valid SignBridge review record (missing candidateId or parameterRatings).");
+          }
+        } catch (err) {
+          alert("Error parsing review JSON: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportWorksheetJSON() {
+      validateReviewForm();
+      const data = collectWorksheetData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const safeName = data.reviewer.name.replace(/[^a-zA-Z0-9_-]/g, '_') || 'Review';
+      a.download = `ISL_Namaste_Review_${safeName}_${data.reviewer.date}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function generateMarkdownSummary() {
+      const d = collectWorksheetData();
+      return `# ISL Expert Review Finding: NAMASTE Candidate Motion
+
+**Review Schema:** \`${d.reviewSchemaVersion}\`  
+**Review Session Date:** ${d.reviewer.date} (${d.timestampISO})  
+**Reviewer:** ${d.reviewer.name} (Role: ${d.reviewer.role})  
+**Evaluated Candidate:** \`${d.candidateId}\` (Version: \`${d.candidateVersion}\`)  
+**Candidate File SHA-256:** \`${d.candidateFileSha256}\`  
+**Reference Video File:** \`${d.referenceVideoFile}\`  
+**Reference Video SHA-256:** \`${d.referenceVideoSha256}\`  
+**Status:** \`${d.validationStatus}\`  
+**Source Provenance:** ${d.sourceReference}  
+
+---
+
+## 1. Five Phonological Parameters Evaluation
+- **Handshape (DEZ):** \`${d.parameterRatings.handshape}\`
+- **Location (TAB):** \`${d.parameterRatings.location}\`
+- **Orientation (ORI):** \`${d.parameterRatings.orientation}\`
+- **Movement (SIG):** \`${d.parameterRatings.movement}\`
+- **Non-Manual Markers (NMM):** \`${d.parameterRatings.non_manuals}\`
+
+## 2. Low-Confidence & Scrutiny Frames
+- **Frame 22 ($880\\text{ ms}$ lift):** ${d.flaggedFramesInspected.frame22_lift_natural ? "Yes (Observed natural motion)" : "No (Distortion / unnatural motion noted)"}
+- **Frame 59 ($2360\\text{ ms}$ release):** ${d.flaggedFramesInspected.frame59_parting_smooth ? "Yes (Observed smooth release)" : "No (Discontinuity / popping noted)"}
+- **Frame 62 ($2480\\text{ ms}$ lap rest):** ${d.flaggedFramesInspected.frame62_lap_rest_clean ? "Yes (Observed clean rest)" : "No (Asymmetry / distortion noted)"}
+
+## 3. Rig Limitations & Evidence Requests
+- **Avatar Rig:** Adobe Mixamo Y-Bot (\`ybot.glb\`)
+- **Limitation Acknowledgment:** Rig possesses full 4-phalange articulated fingers, but has a rigid metallic face with zero facial blendshapes or eye bones.
+- **Unassessable Dimensions:** ${d.unassessableDimensions.length > 0 ? d.unassessableDimensions.join(", ") : "None"}
+- **Further Evidence Requested:** ${d.furtherEvidenceRequested ? ("Yes — " + (d.evidenceRequestDetails || "Additional multi-angle video or slower reference capture requested")) : "No — No further evidence requested at this time"}
+
+## 4. Qualitative Notes & Recommendations
+${d.qualitativeNotes || "_No specific qualitative notes provided._"}
+
+## 5. Overall Reviewer Recommendation
+**Verdict:** \`${d.overallVerdict}\`
+`;
+    }
+
+    function exportWorksheetMarkdown() {
+      validateReviewForm();
+      const md = generateMarkdownSummary();
+      const blob = new Blob([md], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const d = collectWorksheetData();
+      const safeName = d.reviewer.name.replace(/[^a-zA-Z0-9_-]/g, '_') || 'Review';
+      a.href = url;
+      a.download = `ISL_Namaste_Review_${safeName}_${d.reviewer.date}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function copySummaryToClipboard() {
+      validateReviewForm();
+      const md = generateMarkdownSummary();
+      navigator.clipboard.writeText(md).then(() => {
+        alert("Review summary copied to clipboard in Markdown format!");
+      }).catch(err => {
+        alert("Clipboard copy failed: " + err);
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>

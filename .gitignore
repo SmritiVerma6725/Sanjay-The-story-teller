@@ -1,0 +1,144 @@
+# ==============================================================================
+# SignBridge — Comprehensive .gitignore
+# ==============================================================================
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+signbridge-backend/.venv/
+tools/isl_motion_extraction/.venv/
+
+# External / Candidate Reference Repositories (Audited in Docs/ASSET_LICENSES.md)
+GenASL/
+kozha_repo/
+yap_render_repo/
+
+# Rights-Uncleared Media Assets (Mandatory per SignBridge Governance & PRD)
+tools/isl_motion_extraction/reference_videos/*.mp4
+tools/isl_motion_extraction/reference_videos/*.avi
+tools/isl_motion_extraction/reference_videos/*.mov
+
+# Machine Learning Binary Model Weights (Downloadable via download_models.py)
+tools/isl_motion_extraction/models/*.task
+tools/isl_motion_extraction/models/*.onnx
+tools/isl_motion_extraction/models/*.tflite
+models/
+*.bin
+*.pt
+*.safetensors
+
+# Chrome Profiles & Local Browser User Data
+.chrome_test_profile/
+clean_signbridge_profile/
+clean_test_profile/
+isolated_test_profile/
+scratch_cdp_profile/
+test_profile_m36/
+
+# Ephemeral Audio & Local Slices
+*.wav
+*.pcm
+!signbridge-backend/test_speech_sample.wav
+
+# Local Scratch Scripts & Debug Automation
+scratch_*.*
+crop_*.*
+convert_*.*
+check_dim.ps1
+list_uia_windows.ps1
+list_windows.ps1
+find_chrome_ui.ps1
+find_chrome_ui_desktop.ps1
+test_uia.ps1
+click_*.py
+check_chrome_*.py
+check_devmode.py
+check_ext_files.py
+check_shortcuts_page.py
+check_youtube_cdp.py
+check_yt_state.py
+cdp_test.py
+audit_inventory.py
+await_live_chunks.py
+diagnostics_monitor.py
+find_loaded_ext.py
+focus_toolbar.py
+inspect_chrome.py
+inspect_ext_settings.py
+inspect_installed_extensions.py
+inspect_popup_tab.py
+launch_default_chrome.py
+launch_visible_chrome.py
+monitor_live_traffic.py
+monitor_service_worker.py
+open_extensions_tab.py
+reload_and_return.py
+rewind_youtube.py
+scan_toolbar.py
+screenshot_desktop.py
+search_all_profiles.py
+send_escape.py
+switch_tab.py
+target_chrome_tab.py
+test_cdp_automation.py
+test_dedicated_profile.py
+test_f10.py
+test_launch.py
+test_load_unpacked_dialog.py
+test_nav_viewer.py
+test_sendinput.py
+test_uia_desktop.py
+toggle_devmode.py
+trigger_action_shortcut.py
+run_live_verification_pipeline.py
+run_persistent_chrome.py
+
+# Uncompressed Desktop Bitmaps & Diagnostic Screenshots
+*.bmp
+after_capture_click.png
+all_tabs.png
+buttons_crop.png
+card_crop.png
+clean_top_right.png
+corner_crop.png
+dedicated_toolbar.png
+desktop_screenshot.png
+popup_opened.png
+shortcuts_page.png
+signbridge_card.png
+signbridge_full_card.png
+toolbar_buttons.png
+toolbar_crop.png
+toolbar_right.png
+toolbar_right_crop.png
+toolbar_top_crop.png
+toolbar_top_right.png
+top_right_corner.png
+reload_button.png
+
+# Secrets & Environment Variables
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+
+# OS / Editor Artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SignBridge M3 Phase 3.1 Automated Test Suite — Data Contracts</title>
+  <style>
+    body { font-family: monospace; background: #0f172a; color: #f8fafc; padding: 20px; }
+    .pass { color: #10b981; }
+    .fail { color: #ef4444; font-weight: bold; }
+    .suite { margin-top: 15px; font-weight: bold; color: #38bdf8; font-size: 14px; }
+    .test { margin-left: 20px; line-height: 1.6; }
+    #summary { margin-top: 25px; padding: 15px; border-top: 2px solid #334155; font-size: 16px; }
+  </style>
+  <script src="../models/sign_contracts.js"></script>
+  <script src="../translation/isl_translator.js"></script>
+  <script src="../translation/asl_translator.js"></script>
+  <script src="../translation/translation_router.js"></script>
+  <script src="../animation/keyframe_registry.js"></script>
+  <script src="../lib/three.min.js"></script>
+  <script src="../lib/GLTFLoader.js"></script>
+  <script src="../animation/avatar_player.js"></script>
+</head>
+<body>
+  <h1>SignBridge Milestone M3 — Data Contracts & ISL Translator Verification Suite</h1>
+  <div id="results"></div>
+  <div id="summary">Running tests...</div>
+
+  <script>
+    const results = [];
+    const container = document.getElementById("results");
+    const summary = document.getElementById("summary");
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message || "Assertion failed");
+    }
+
+    function assertEqual(actual, expected, message) {
+      if (actual !== expected) {
+        throw new Error(`${message || 'Assertion failed'} - Expected: ${expected}, Got: ${actual}`);
+      }
+    }
+
+    async function runSuite(suiteName, tests) {
+      const suiteDiv = document.createElement("div");
+      suiteDiv.className = "suite";
+      suiteDiv.textContent = `=== ${suiteName} ===`;
+      container.appendChild(suiteDiv);
+
+      for (const [testName, fn] of Object.entries(tests)) {
+        const testDiv = document.createElement("div");
+        testDiv.className = "test";
+        try {
+          await fn();
+          testDiv.innerHTML = `<span class="pass">&#10004; PASS</span>: ${testName}`;
+          results.push({ suite: suiteName, name: testName, status: "PASS" });
+        } catch (err) {
+          testDiv.innerHTML = `<span class="fail">&#10008; FAIL</span>: ${testName} - ${err.message}`;
+          results.push({ suite: suiteName, name: testName, status: "FAIL", error: err.message });
+          console.error(`FAIL: ${testName}`, err);
+        }
+        container.appendChild(testDiv);
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const C = window.SignBridgeContracts;
+      assert(C, "SignBridgeContracts failed to load on window");
+
+      // -------------------------------------------------------------
+      // Suite 1: Valid SignItem & SignSequence Objects
+      // -------------------------------------------------------------
+      await runSuite("1. Valid Objects & Immutability Contracts", {
+        "Minimal valid SignItem": () => {
+          const item = {
+            gloss: "HELLO",
+            category: "lexical",
+            durationMs: 750,
+            source: "seed_dictionary"
+          };
+          const res = C.validateSignItem(item);
+          assert(res.valid, `Expected valid, got errors: ${res.errors.join('; ')}`);
+          assertEqual(res.errors.length, 0);
+        },
+
+        "Full valid SignItem with animationId and nonManualMarker": () => {
+          const item = {
+            gloss: "THANK_YOU",
+            category: "lexical",
+            durationMs: 900,
+            source: "seed_dictionary",
+            animationId: "anim_isl_thank_you_v1",
+            nonManualMarker: {
+              headTilt: "forward",
+              eyebrows: "raised"
+            }
+          };
+          const res = C.validateSignItem(item);
+          assert(res.valid, `Expected valid, got errors: ${res.errors.join('; ')}`);
+        },
+
+        "Factory createSignItem produces frozen immutable object with defaults": () => {
+          const item = C.createSignItem({
+            gloss: "welcome",
+            durationMs: 800
+          });
+          assertEqual(item.gloss, "WELCOME", "Gloss should be uppercase");
+          assertEqual(item.category, "lexical", "Default category should be lexical");
+          assertEqual(item.source, "seed_dictionary", "Default source should be seed_dictionary");
+          assertEqual(item.animationId, null, "Default animationId should be null");
+          assert(Object.isFrozen(item), "SignItem should be frozen/immutable");
+        },
+
+        "Valid complete SignSequence with children and unsupported words": () => {
+          const seq = {
+            sequenceId: "seq_chunk_001",
+            language: "ISL",
+            rawTranscript: "Hello world quantum",
+            sourceChunkSeq: 1,
+            startMediaTimeMs: 0,
+            endMediaTimeMs: 2000,
+            signs: [
+              { gloss: "HELLO", category: "lexical", durationMs: 750, source: "seed_dictionary" },
+              { gloss: "W", category: "fingerspelling", durationMs: 300, source: "fingerspell_fallback" }
+            ],
+            unsupportedWords: ["quantum"],
+            fingerspellingApplied: true
+          };
+          const res = C.validateSignSequence(seq);
+          assert(res.valid, `Expected valid, got errors: ${res.errors.join('; ')}`);
+        },
+
+        "Factory createSignSequence produces frozen immutable sequence": () => {
+          const seq = C.createSignSequence({
+            sequenceId: "seq_002",
+            startMediaTimeMs: 2000,
+            endMediaTimeMs: 4000,
+            signs: [{ gloss: "YES", category: "lexical", durationMs: 500 }],
+            unsupportedWords: ["test"],
+            fingerspellingApplied: false
+          });
+          assert(Object.isFrozen(seq), "SignSequence should be frozen");
+          assert(Object.isFrozen(seq.signs), "signs array should be frozen");
+          assert(Object.isFrozen(seq.unsupportedWords), "unsupportedWords array should be frozen");
+          assertEqual(seq.signs[0].gloss, "YES");
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 2: Missing Fields Validation
+      // -------------------------------------------------------------
+      await runSuite("2. Missing Fields Enforcement", {
+        "Rejects SignItem missing gloss or empty gloss": () => {
+          let res = C.validateSignItem({ category: "lexical", durationMs: 500, source: "seed_dictionary" });
+          assert(!res.valid, "Should reject missing gloss");
+          assert(res.errors.some(e => e.includes("gloss")), "Error should mention gloss");
+
+          res = C.validateSignItem({ gloss: "   ", category: "lexical", durationMs: 500, source: "seed_dictionary" });
+          assert(!res.valid, "Should reject empty string gloss");
+        },
+
+        "Rejects SignItem missing category or durationMs or source": () => {
+          let res = C.validateSignItem({ gloss: "HELLO", durationMs: 500, source: "seed_dictionary" });
+          assert(!res.valid, "Should reject missing category");
+
+          res = C.validateSignItem({ gloss: "HELLO", category: "lexical", source: "seed_dictionary" });
+          assert(!res.valid, "Should reject missing durationMs");
+
+          res = C.validateSignItem({ gloss: "HELLO", category: "lexical", durationMs: 500 });
+          assert(!res.valid, "Should reject missing source in direct validator");
+        },
+
+        "Rejects SignSequence missing sequenceId or language": () => {
+          let res = C.validateSignSequence({
+            language: "ISL",
+            rawTranscript: "hi",
+            sourceChunkSeq: 0,
+            startMediaTimeMs: 0,
+            endMediaTimeMs: 1000,
+            signs: [],
+            unsupportedWords: [],
+            fingerspellingApplied: false
+          });
+          assert(!res.valid, "Should reject missing sequenceId");
+
+          res = C.validateSignSequence({
+            sequenceId: "seq_1",
+            rawTranscript: "hi",
+            sourceChunkSeq: 0,
+            startMediaTimeMs: 0,
+            endMediaTimeMs: 1000,
+            signs: [],
+            unsupportedWords: [],
+            fingerspellingApplied: false
+          });
+          assert(!res.valid, "Should reject missing language");
+        },
+
+        "Rejects SignSequence missing signs or unsupportedWords or fingerspellingApplied": () => {
+          const base = {
+            sequenceId: "seq_1",
+            language: "ISL",
+            rawTranscript: "hi",
+            sourceChunkSeq: 0,
+            startMediaTimeMs: 0,
+            endMediaTimeMs: 1000
+          };
+          let res = C.validateSignSequence({ ...base, unsupportedWords: [], fingerspellingApplied: false });
+          assert(!res.valid, "Should reject missing signs");
+
+          res = C.validateSignSequence({ ...base, signs: [], fingerspellingApplied: false });
+          assert(!res.valid, "Should reject missing unsupportedWords");
+
+          res = C.validateSignSequence({ ...base, signs: [], unsupportedWords: [] });
+          assert(!res.valid, "Should reject missing fingerspellingApplied");
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 3: Invalid Enum Values & Consistency
+      // -------------------------------------------------------------
+      await runSuite("3. Allowed Enum Values & Consistency Rules", {
+        "Rejects invalid SignItem category": () => {
+          const res = C.validateSignItem({
+            gloss: "HELLO",
+            category: "unknown_category",
+            durationMs: 500,
+            source: "seed_dictionary"
+          });
+          assert(!res.valid, "Should reject invalid category");
+          assert(res.errors.some(e => e.includes("category")), "Error should mention category");
+        },
+
+        "Rejects invalid SignItem source": () => {
+          const res = C.validateSignItem({
+            gloss: "HELLO",
+            category: "lexical",
+            durationMs: 500,
+            source: "remote_cloud_api"
+          });
+          assert(!res.valid, "Should reject invalid source");
+          assert(res.errors.some(e => e.includes("source")), "Error should mention source");
+        },
+
+        "Rejects invalid SignSequence language": () => {
+          const res = C.validateSignSequence({
+            sequenceId: "seq_1",
+            language: "FRENCH_SIGN",
+            rawTranscript: "bonjour",
+            sourceChunkSeq: 0,
+            startMediaTimeMs: 0,
+            endMediaTimeMs: 1000,
+            signs: [],
+            unsupportedWords: [],
+            fingerspellingApplied: false
+          });
+          assert(!res.valid, "Should reject unsupported language");
+        },
+
+        "Rejects invalid nonManualMarker enums": () => {
+          const res = C.validateSignItem({
+            gloss: "HELLO",
+            category: "lexical",
+            durationMs: 500,
+            source: "seed_dictionary",
+            nonManualMarker: {
+              headTilt: "upside_down",
+              eyebrows: "winking"
+            }
+          });
+          assert(!res.valid, "Should reject invalid headTilt and eyebrows");
+          assert(res.errors.some(e => e.includes("headTilt")), "Error should mention headTilt");
+          assert(res.errors.some(e => e.includes("eyebrows")), "Error should mention eyebrows");
+        },
+
+        "Enforces consistency between category and source": () => {
+          let res = C.validateSignItem({
+            gloss: "A",
+            category: "fingerspelling",
+            durationMs: 300,
+            source: "seed_dictionary" // Inconsistent!
+          });
+          assert(!res.valid, "Should reject fingerspelling without fingerspell_fallback source");
+
+          res = C.validateSignItem({
+            gloss: "PAUSE",
+            category: "pause",
+            durationMs: 300,
+            source: "seed_dictionary" // Inconsistent!
+          });
+          assert(!res.valid, "Should reject pause without grammar_pause source");
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 4: Duration & Timestamp Boundaries
+      // -------------------------------------------------------------
+      await runSuite("4. Duration & Timestamp Range Boundaries", {
+        "Rejects negative or non-finite durationMs in SignItem": () => {
+          let res = C.validateSignItem({
+            gloss: "HELLO",
+            category: "lexical",
+            durationMs: -500,
+            source: "seed_dictionary"
+          });
+          assert(!res.valid, "Should reject negative duration");
+
+          res = C.validateSignItem({
+            gloss: "HELLO",
+            category: "lexical",
+            durationMs: Infinity,
+            source: "seed_dictionary"
+          });
+          assert(!res.valid, "Should reject Infinity duration");
+        },
+
+        "Rejects negative timestamps in SignSequence": () => {
+          const res = C.validateSignSequence({
+            sequenceId: "seq_1",
+            language: "ISL",
+            rawTranscript: "hi",
+            sourceChunkSeq: 0,
+            startMediaTimeMs: -100,
+            endMediaTimeMs: 1000,
+            signs: [],
+            unsupportedWords: [],
+            fingerspellingApplied: false
+          });
+          assert(!res.valid, "Should reject negative startMediaTimeMs");
+        },
+
+        "Rejects endMediaTimeMs less than startMediaTimeMs": () => {
+          const res = C.validateSignSequence({
+            sequenceId: "seq_1",
+            language: "ISL",
+            rawTranscript: "hi",
+            sourceChunkSeq: 0,
+            startMediaTimeMs: 2500,
+            endMediaTimeMs: 1000,
+            signs: [],
+            unsupportedWords: [],
+            fingerspellingApplied: false
+          });
+          assert(!res.valid, "Should reject inverted media timestamps");
+        },
+
+        "Accepts equal startMediaTimeMs and endMediaTimeMs (zero-length boundary)": () => {
+          const res = C.validateSignSequence({
+            sequenceId: "seq_zero",
+            language: "ISL",
+            rawTranscript: "",
+            sourceChunkSeq: 0,
+            startMediaTimeMs: 1000,
+            endMediaTimeMs: 1000,
+            signs: [],
+            unsupportedWords: [],
+            fingerspellingApplied: false
+          });
+          assert(res.valid, `Should accept zero-duration boundary sequence: ${res.errors.join('; ')}`);
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 5: Empty Sequences & Child Validation
+      // -------------------------------------------------------------
+      await runSuite("5. Empty Sequences & Nested Child Validation", {
+        "Accepts valid empty sequence (silence / no speech)": () => {
+          const res = C.validateSignSequence({
+            sequenceId: "seq_silent",
+            language: "ISL",
+            rawTranscript: "",
+            sourceChunkSeq: 5,
+            startMediaTimeMs: 10000,
+            endMediaTimeMs: 12000,
+            signs: [],
+            unsupportedWords: [],
+            fingerspellingApplied: false
+          });
+          assert(res.valid, "Empty signs array must be valid for silence");
+        },
+
+        "Recursively detects and reports invalid child SignItems inside sequence": () => {
+          const res = C.validateSignSequence({
+            sequenceId: "seq_bad_child",
+            language: "ISL",
+            rawTranscript: "hello",
+            sourceChunkSeq: 1,
+            startMediaTimeMs: 0,
+            endMediaTimeMs: 2000,
+            signs: [
+              { gloss: "VALID", category: "lexical", durationMs: 500, source: "seed_dictionary" },
+              { gloss: "INVALID", category: "lexical", durationMs: -200, source: "seed_dictionary" }
+            ],
+            unsupportedWords: [],
+            fingerspellingApplied: false
+          });
+          assert(!res.valid, "Should reject sequence with invalid child item");
+          assert(res.errors.some(e => e.includes("signs[1]") && e.includes("durationMs")), "Error should pinpoint signs[1]");
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 6: Unsupported Words & Honest Reporting
+      // -------------------------------------------------------------
+      await runSuite("6. Unsupported Words & Honest Telemetry", {
+        "Accepts string list of unsupported words": () => {
+          const res = C.validateSignSequence({
+            sequenceId: "seq_unsupported",
+            language: "ISL",
+            rawTranscript: "today we explore quantum thermodynamics",
+            sourceChunkSeq: 2,
+            startMediaTimeMs: 4000,
+            endMediaTimeMs: 6000,
+            signs: [{ gloss: "TODAY", category: "lexical", durationMs: 600, source: "seed_dictionary" }],
+            unsupportedWords: ["quantum", "thermodynamics"],
+            fingerspellingApplied: false
+          });
+          assert(res.valid, `Expected valid, got: ${res.errors.join('; ')}`);
+        },
+
+        "Rejects non-string items or empty strings in unsupportedWords": () => {
+          let res = C.validateSignSequence({
+            sequenceId: "seq_bad_unsupported",
+            language: "ISL",
+            rawTranscript: "test",
+            sourceChunkSeq: 1,
+            startMediaTimeMs: 0,
+            endMediaTimeMs: 2000,
+            signs: [],
+            unsupportedWords: ["valid", 12345],
+            fingerspellingApplied: false
+          });
+          assert(!res.valid, "Should reject number in unsupportedWords");
+
+          res = C.validateSignSequence({
+            sequenceId: "seq_bad_unsupported_2",
+            language: "ISL",
+            rawTranscript: "test",
+            sourceChunkSeq: 1,
+            startMediaTimeMs: 0,
+            endMediaTimeMs: 2000,
+            signs: [],
+            unsupportedWords: ["   "],
+            fingerspellingApplied: false
+          });
+          assert(!res.valid, "Should reject blank string in unsupportedWords");
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 7: Fingerspelling Metadata & Letter Constraints
+      // -------------------------------------------------------------
+      await runSuite("7. Fingerspelling Constraints & Metadata", {
+        "Accepts single-character gloss for fingerspelling": () => {
+          const item = {
+            gloss: "K",
+            category: "fingerspelling",
+            durationMs: 350,
+            source: "fingerspell_fallback"
+          };
+          const res = C.validateSignItem(item);
+          assert(res.valid, `Expected valid fingerspelling item, got: ${res.errors.join('; ')}`);
+        },
+
+        "Rejects multi-character gloss for fingerspelling category": () => {
+          const item = {
+            gloss: "APPLE",
+            category: "fingerspelling",
+            durationMs: 350,
+            source: "fingerspell_fallback"
+          };
+          const res = C.validateSignItem(item);
+          assert(!res.valid, "Should reject multi-character fingerspelling gloss");
+          assert(res.errors.some(e => e.includes("single-character gloss")), "Error should mention single-character constraint");
+        },
+
+        "Enforces boolean type for fingerspellingApplied": () => {
+          const res = C.validateSignSequence({
+            sequenceId: "seq_fs_bool",
+            language: "ISL",
+            rawTranscript: "test",
+            sourceChunkSeq: 1,
+            startMediaTimeMs: 0,
+            endMediaTimeMs: 2000,
+            signs: [],
+            unsupportedWords: [],
+            fingerspellingApplied: "true" // String instead of boolean!
+          });
+          assert(!res.valid, "Should reject string 'true' for fingerspellingApplied");
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 8: Animation & Sign Identifier (Optional Link to Registry)
+      // -------------------------------------------------------------
+      await runSuite("8. Animation Identifier Contract & Validation", {
+        "Accepts valid animationId string matching alphanumeric/dash/underscore": () => {
+          const item = {
+            gloss: "PLEASE",
+            category: "lexical",
+            durationMs: 700,
+            source: "seed_dictionary",
+            animationId: "anim_isl_please_v1.0"
+          };
+          const res = C.validateSignItem(item);
+          assert(res.valid, `Expected valid animationId, got: ${res.errors.join('; ')}`);
+        },
+
+        "Accepts null or omitted animationId (decoupling linguistic gloss from asset registry)": () => {
+          const res1 = C.validateSignItem({
+            gloss: "HELLO",
+            category: "lexical",
+            durationMs: 600,
+            source: "seed_dictionary",
+            animationId: null
+          });
+          assert(res1.valid, "null animationId should be valid");
+
+          const res2 = C.validateSignItem({
+            gloss: "HELLO",
+            category: "lexical",
+            durationMs: 600,
+            source: "seed_dictionary"
+          });
+          assert(res2.valid, "omitted animationId should be valid");
+        },
+
+        "Rejects invalid animationId with whitespace or disallowed characters": () => {
+          const res = C.validateSignItem({
+            gloss: "HELLO",
+            category: "lexical",
+            durationMs: 600,
+            source: "seed_dictionary",
+            animationId: "anim hello with spaces!"
+          });
+          assert(!res.valid, "Should reject animationId with spaces/exclamation");
+          assert(res.errors.some(e => e.includes("animationId")), "Error should mention animationId");
+        }
+      });
+
+      // =============================================================
+      // MILESTONE M3 PHASE 3.2: ISL TRANSLATOR & LEXICON MATCHER
+      // =============================================================
+      const T = window.SignBridgeISLTranslator;
+      assert(T, "SignBridgeISLTranslator failed to load on window");
+
+      // -------------------------------------------------------------
+      // Suite 9: Text Normalization & Tokenization
+      // -------------------------------------------------------------
+      await runSuite("9. Text Normalization & Tokenization", {
+        "Strips standard punctuation and converts to lowercase tokens": () => {
+          const res = T.normalizeTranscript("Hello, world! How are you?");
+          assertEqual(res.tokens.length, 5);
+          assertEqual(res.tokens[0], "hello");
+          assertEqual(res.tokens[1], "world");
+          assertEqual(res.tokens[2], "how");
+          assertEqual(res.tokens[3], "are");
+          assertEqual(res.tokens[4], "you");
+          assert(res.isQuestion, "Should detect question mark flag");
+        },
+
+        "Handles extra whitespace, tabs, and mixed casing": () => {
+          const res = T.normalizeTranscript("   HeLLo \t\n  THANK   YoU   ");
+          assertEqual(res.tokens.length, 3);
+          assertEqual(res.tokens[0], "hello");
+          assertEqual(res.tokens[1], "thank");
+          assertEqual(res.tokens[2], "you");
+          assert(!res.isQuestion, "Should be false for non-question");
+        },
+
+        "Handles empty and whitespace-only transcripts gracefully": () => {
+          const res1 = T.normalizeTranscript("");
+          assertEqual(res1.tokens.length, 0);
+          assertEqual(res1.normalizedText, "");
+
+          const res2 = T.normalizeTranscript("   \t  \n  ");
+          assertEqual(res2.tokens.length, 0);
+
+          const res3 = T.normalizeTranscript(null);
+          assertEqual(res3.tokens.length, 0);
+        },
+
+        "Handles punctuation-only strings": () => {
+          const res = T.normalizeTranscript("... ,,, ??? !!! ---");
+          assertEqual(res.tokens.length, 0);
+          assert(res.isQuestion, "Should detect question mark even in punctuation string");
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 10: Known Seed Lexicon & Lemma Matching
+      // -------------------------------------------------------------
+      await runSuite("10. Seed Lexicon Matching & Lemmas", {
+        "Matches canonical single-word seed entries": () => {
+          const seq = T.translateTranscriptToISL("hello please welcome");
+          assertEqual(seq.signs.length, 3);
+          assertEqual(seq.signs[0].gloss, "HELLO");
+          assertEqual(seq.signs[1].gloss, "PLEASE");
+          assertEqual(seq.signs[2].gloss, "WELCOME");
+          assertEqual(seq.unsupportedWords.length, 0);
+          assertEqual(seq.signs[0].category, "lexical");
+          assertEqual(seq.signs[0].source, "seed_dictionary");
+        },
+
+        "Matches lemma variations to canonical glosses": () => {
+          const seq = T.translateTranscriptToISL("hi thanks me your");
+          assertEqual(seq.signs.length, 4);
+          assertEqual(seq.signs[0].gloss, "HELLO", "hi -> HELLO");
+          assertEqual(seq.signs[1].gloss, "THANK_YOU", "thanks -> THANK_YOU");
+          assertEqual(seq.signs[2].gloss, "I", "me -> I");
+          assertEqual(seq.signs[3].gloss, "YOU", "your -> YOU");
+          assertEqual(seq.unsupportedWords.length, 0);
+        },
+
+        "Prioritizes multi-word phrases over single words (thank you)": () => {
+          const seq = T.translateTranscriptToISL("thank you very much");
+          assertEqual(seq.signs.length, 1);
+          assertEqual(seq.signs[0].gloss, "THANK_YOU");
+          // 'very' and 'much' are unsupported
+          assertEqual(seq.unsupportedWords.length, 2);
+          assertEqual(seq.unsupportedWords[0], "very");
+          assertEqual(seq.unsupportedWords[1], "much");
+        },
+
+        "Correctly handles repeated known words": () => {
+          const seq = T.translateTranscriptToISL("hello hello hello");
+          assertEqual(seq.signs.length, 3);
+          assertEqual(seq.signs[0].gloss, "HELLO");
+          assertEqual(seq.signs[1].gloss, "HELLO");
+          assertEqual(seq.signs[2].gloss, "HELLO");
+          assertEqual(seq.unsupportedWords.length, 0);
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 11: Unknown & Mixed Words (Honest Reporting)
+      // -------------------------------------------------------------
+      await runSuite("11. Unsupported Words & Honest Reporting", {
+        "Surfaces all unknown words when transcript has zero seed matches": () => {
+          const seq = T.translateTranscriptToISL("quantum computing artificial intelligence");
+          assertEqual(seq.signs.length, 0, "No phantom signs should be emitted");
+          assertEqual(seq.unsupportedWords.length, 4);
+          assertEqual(seq.unsupportedWords[0], "quantum");
+          assertEqual(seq.unsupportedWords[1], "computing");
+          assertEqual(seq.unsupportedWords[2], "artificial");
+          assertEqual(seq.unsupportedWords[3], "intelligence");
+          assert(!seq.fingerspellingApplied, "fingerspellingApplied must be false when disabled");
+        },
+
+        "Correctly partitions mixed known and unknown words": () => {
+          const seq = T.translateTranscriptToISL("hello quantum world thank you");
+          assertEqual(seq.signs.length, 2);
+          assertEqual(seq.signs[0].gloss, "HELLO");
+          assertEqual(seq.signs[1].gloss, "THANK_YOU");
+          assertEqual(seq.unsupportedWords.length, 2);
+          assertEqual(seq.unsupportedWords[0], "quantum");
+          assertEqual(seq.unsupportedWords[1], "world");
+        },
+
+        "Preserves repeated unknown words in unsupportedWords list": () => {
+          const seq = T.translateTranscriptToISL("quantum quantum");
+          assertEqual(seq.signs.length, 0);
+          assertEqual(seq.unsupportedWords.length, 2);
+          assertEqual(seq.unsupportedWords[0], "quantum");
+          assertEqual(seq.unsupportedWords[1], "quantum");
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 12: Fingerspelling Fallback Mode
+      // -------------------------------------------------------------
+      await runSuite("12. Fingerspelling Fallback Mode", {
+        "Default mode does not expand unsupported words into fingerspelling": () => {
+          const seq = T.translateTranscriptToISL("cat");
+          assertEqual(seq.signs.length, 0, "Default must not emit fingerspelling signs");
+          assertEqual(seq.unsupportedWords.length, 1);
+          assertEqual(seq.unsupportedWords[0], "cat");
+          assert(!seq.fingerspellingApplied);
+        },
+
+        "Expands unsupported words to single-letter SignItems when enabled": () => {
+          const seq = T.translateTranscriptToISL("cat", { enableFingerspellingFallback: true });
+          assertEqual(seq.signs.length, 3);
+          assertEqual(seq.signs[0].gloss, "C");
+          assertEqual(seq.signs[1].gloss, "A");
+          assertEqual(seq.signs[2].gloss, "T");
+          assertEqual(seq.signs[0].category, "fingerspelling");
+          assertEqual(seq.signs[0].source, "fingerspell_fallback");
+          // Crucial: unsupportedWords still honestly records the source word!
+          assertEqual(seq.unsupportedWords.length, 1);
+          assertEqual(seq.unsupportedWords[0], "cat");
+          assert(seq.fingerspellingApplied, "fingerspellingApplied must be true");
+        },
+
+        "Mixed known lexical and fingerspelled signs in fallback mode": () => {
+          const seq = T.translateTranscriptToISL("hello dog", { enableFingerspellingFallback: true });
+          assertEqual(seq.signs.length, 4);
+          assertEqual(seq.signs[0].gloss, "HELLO");
+          assertEqual(seq.signs[0].category, "lexical");
+          assertEqual(seq.signs[1].gloss, "D");
+          assertEqual(seq.signs[2].gloss, "O");
+          assertEqual(seq.signs[3].gloss, "G");
+          assertEqual(seq.signs[1].category, "fingerspelling");
+          assertEqual(seq.unsupportedWords.length, 1);
+          assertEqual(seq.unsupportedWords[0], "dog");
+          assert(seq.fingerspellingApplied);
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 13: Isolated Experimental Grammar Heuristics
+      // -------------------------------------------------------------
+      await runSuite("13. Isolated Experimental Grammar Heuristics", {
+        "Eliminates auxiliary verbs (is, am, are) and articles in experimental mode": () => {
+          const tokens = ["the", "name", "is", "good"];
+          const transformed = T.applyExperimentalGrammarHeuristics(tokens);
+          assertEqual(transformed.length, 2);
+          assertEqual(transformed[0], "name");
+          assertEqual(transformed[1], "good");
+        },
+
+        "Fronts temporal markers to the beginning": () => {
+          const tokens = ["i", "help", "you", "today"];
+          const transformed = T.applyExperimentalGrammarHeuristics(tokens);
+          assertEqual(transformed[0], "today", "today must be fronted to index 0");
+        },
+
+        "Shifts WH-question words to the terminus": () => {
+          const tokens = ["what", "name", "you"];
+          const transformed = T.applyExperimentalGrammarHeuristics(tokens);
+          assertEqual(transformed[transformed.length - 1], "what", "what must be placed at terminus");
+        },
+
+        "Basic experimental SVO to SOV reordering on 3-token pronoun phrase": () => {
+          const tokens = ["i", "help", "you"];
+          const transformed = T.applyExperimentalGrammarHeuristics(tokens);
+          assertEqual(transformed.length, 3);
+          assertEqual(transformed[0], "i");
+          assertEqual(transformed[1], "you", "Object 'you' moved before verb");
+          assertEqual(transformed[2], "help", "Verb 'help' moved to end");
+        },
+
+        "Heuristic reordering is bypassed when enableExperimentalReordering is false (default)": () => {
+          const seq = T.translateTranscriptToISL("what is your name", { enableExperimentalReordering: false });
+          // Without heuristic reordering, word order is strictly preserved
+          // 'what' is unsupported, 'is' is unsupported, 'your' -> YOU, 'name' -> NAME
+          assertEqual(seq.signs.length, 2);
+          assertEqual(seq.signs[0].gloss, "YOU");
+          assertEqual(seq.signs[1].gloss, "NAME");
+          assertEqual(seq.unsupportedWords.length, 2);
+          assertEqual(seq.unsupportedWords[0], "what");
+          assertEqual(seq.unsupportedWords[1], "is");
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 14: End-to-End Contract Compliance & Boundary Cases
+      // -------------------------------------------------------------
+      await runSuite("14. Contract Compliance & Boundary Metadata", {
+        "Output SignSequence strictly passes schema validator": () => {
+          const seq = T.translateTranscriptToISL("Hello, thank you for your help!", {
+            sequenceId: "seq_custom_100",
+            sourceChunkSeq: 3,
+            startMediaTimeMs: 6000,
+            endMediaTimeMs: 8000
+          });
+          const validation = C.validateSignSequence(seq);
+          assert(validation.valid, `SignSequence failed validation: ${validation.errors.join('; ')}`);
+          assertEqual(seq.sequenceId, "seq_custom_100");
+          assertEqual(seq.sourceChunkSeq, 3);
+          assertEqual(seq.startMediaTimeMs, 6000);
+          assertEqual(seq.endMediaTimeMs, 8000);
+          assertEqual(seq.language, "ISL");
+        },
+
+        "Returned SignSequence is deeply frozen and immutable": () => {
+          const seq = T.translateTranscriptToISL("hello please");
+          assert(Object.isFrozen(seq), "Sequence must be frozen");
+          assert(Object.isFrozen(seq.signs), "signs array must be frozen");
+          assert(Object.isFrozen(seq.unsupportedWords), "unsupportedWords array must be frozen");
+          assert(Object.isFrozen(seq.signs[0]), "sign items must be frozen");
+        },
+
+        "Gracefully handles empty transcript into valid empty sequence": () => {
+          const seq = T.translateTranscriptToISL("");
+          assert(C.validateSignSequence(seq).valid, "Empty transcript must produce valid sequence");
+          assertEqual(seq.signs.length, 0);
+          assertEqual(seq.unsupportedWords.length, 0);
+          assertEqual(seq.rawTranscript, "");
+        },
+
+        "Gracefully clamps invalid negative or inverted timestamps to valid ranges": () => {
+          const seq = T.translateTranscriptToISL("hello", {
+            startMediaTimeMs: -500, // Negative!
+            endMediaTimeMs: -100    // Inverted/negative!
+          });
+          assert(C.validateSignSequence(seq).valid, "Clamped timestamps must pass schema validation");
+          assert(seq.startMediaTimeMs >= 0, "startMediaTimeMs clamped to >= 0");
+          assert(seq.endMediaTimeMs >= seq.startMediaTimeMs, "endMediaTimeMs clamped to >= startMediaTimeMs");
+        }
+      });
+
+      // =============================================================
+      // MILESTONE M3 PHASE 3.3: DECLARATIVE KEYFRAME SCHEMA & RESOLVER
+      // =============================================================
+      const K = window.SignBridgeKeyframeRegistry;
+      assert(K, "SignBridgeKeyframeRegistry failed to load on window");
+
+      // -------------------------------------------------------------
+      // Suite 15: Keyframe Schema & Canonical Bone Rig Dictionary
+      // -------------------------------------------------------------
+      await runSuite("15. Keyframe Schema & Canonical Bone Dictionary", {
+        "Identifies canonical Mixamo bone names with and without mixamorig prefix": () => {
+          assert(K.isValidRigBone("RightArm"), "RightArm should be valid");
+          assert(K.isValidRigBone("mixamorig:RightArm"), "mixamorig:RightArm should be valid");
+          assert(K.isValidRigBone("LeftHandIndex4"), "LeftHandIndex4 should be valid");
+          assert(K.isValidRigBone("mixamorig:LeftHandThumb1"), "mixamorig:LeftHandThumb1 should be valid");
+          assert(K.isValidRigBone("Hips"), "Hips should be valid");
+          assertEqual(K.normalizeBoneName("mixamorig:RightHandThumb1"), "RightHandThumb1");
+          assertEqual(K.CANONICAL_BONES.size, 67, "Rig must have exactly 67 canonical joints");
+        },
+
+        "Rejects unknown bone names and malformed strings": () => {
+          assert(!K.isValidRigBone("mixamorig:Tentacle"), "Tentacle should be rejected");
+          assert(!K.isValidRigBone("Wings"), "Wings should be rejected");
+          assert(!K.isValidRigBone(""), "Empty string should be rejected");
+          assert(!K.isValidRigBone(null), "null should be rejected");
+          assert(!K.isValidRigBone(123), "number should be rejected");
+        },
+
+        "Validates valid Euler and Quaternion BoneTransform objects": () => {
+          const eulerTransform = { bone: "RightArm", rotation: [0, 0, -1.25], rotationType: "euler" };
+          const res1 = K.validateBoneTransform(eulerTransform);
+          assert(res1.valid, `Expected valid Euler transform, got: ${res1.errors.join('; ')}`);
+
+          const quatTransform = { bone: "mixamorig:LeftArm", rotation: [0, 0, 0.7071, 0.7071], rotationType: "quaternion" };
+          const res2 = K.validateBoneTransform(quatTransform);
+          assert(res2.valid, `Expected valid Quaternion transform, got: ${res2.errors.join('; ')}`);
+
+          const posTransform = { bone: "Hips", rotation: [0, 0, 0, 1], rotationType: "quaternion", position: [0, 10, 0] };
+          const res3 = K.validateBoneTransform(posTransform);
+          assert(res3.valid, `Expected valid Transform with position, got: ${res3.errors.join('; ')}`);
+        },
+
+        "Rejects malformed BoneTransform rotations and types": () => {
+          let res = K.validateBoneTransform({ bone: "RightArm", rotation: [0, 0] });
+          assert(!res.valid, "Euler rotation with 2 elements should be rejected");
+
+          res = K.validateBoneTransform({ bone: "RightArm", rotation: [0, 0, NaN] });
+          assert(!res.valid, "Euler rotation with NaN should be rejected");
+
+          res = K.validateBoneTransform({ bone: "RightArm", rotation: [0, 0, 0, 1, 0], rotationType: "quaternion" });
+          assert(!res.valid, "Quaternion with 5 elements should be rejected");
+
+          res = K.validateBoneTransform({ bone: "RightArm", rotation: [0, 0, 0, 0], rotationType: "quaternion" });
+          assert(!res.valid, "Zero-magnitude quaternion should be rejected");
+
+          res = K.validateBoneTransform({ bone: "RightArm", rotation: [0, 0, 0], rotationType: "matrix" });
+          assert(!res.valid, "Unknown rotationType 'matrix' should be rejected");
+
+          res = K.validateBoneTransform({ bone: "RightArm", rotation: [0, 0, 0], position: [0, 0] });
+          assert(!res.valid, "2-element position should be rejected");
+        },
+
+        "Rejects non-existent bone in BoneTransform": () => {
+          const res = K.validateBoneTransform({ bone: "mixamorig:UnknownTail", rotation: [0, 0, 0] });
+          assert(!res.valid, "Transform with unknown bone should be rejected");
+          assert(res.errors.some(e => e.includes("UnknownTail")), "Error should identify invalid joint");
+        },
+
+        "Validates Keyframe timing constraints": () => {
+          const validKf = { timeMs: 500, transforms: [{ bone: "RightArm", rotation: [0, 0, -1] }] };
+          const res1 = K.validateKeyframe(validKf, 1000);
+          assert(res1.valid, "Valid keyframe within clip duration should pass");
+
+          const negKf = { timeMs: -10, transforms: [{ bone: "RightArm", rotation: [0, 0, -1] }] };
+          const res2 = K.validateKeyframe(negKf, 1000);
+          assert(!res2.valid, "Negative timeMs must be rejected");
+
+          const overKf = { timeMs: 1500, transforms: [{ bone: "RightArm", rotation: [0, 0, -1] }] };
+          const res3 = K.validateKeyframe(overKf, 1000);
+          assert(!res3.valid, "timeMs exceeding clip duration must be rejected");
+        },
+
+        "Validates complete SignAnimationClip and flags missing required fields": () => {
+          const validClip = {
+            animationId: "anim_valid_test_v1",
+            gloss: "TEST_GLOSS",
+            durationMs: 800,
+            isLinguisticISL: false,
+            provenance: "Synthetic test harness",
+            keyframes: [
+              { timeMs: 0, transforms: [{ bone: "RightArm", rotation: [0, 0, 0] }] },
+              { timeMs: 800, transforms: [{ bone: "RightArm", rotation: [0, 0, -1.25] }] }
+            ]
+          };
+          assert(K.validateAnimationClip(validClip).valid, "Valid clip should pass validation");
+
+          assert(!K.validateAnimationClip({ ...validClip, animationId: "" }).valid, "Empty animationId must fail");
+          assert(!K.validateAnimationClip({ ...validClip, animationId: "anim test with spaces!" }).valid, "Spaces in animationId must fail");
+          assert(!K.validateAnimationClip({ ...validClip, durationMs: 0 }).valid, "0 duration must fail");
+          assert(!K.validateAnimationClip({ ...validClip, durationMs: -500 }).valid, "Negative duration must fail");
+          assert(!K.validateAnimationClip({ ...validClip, provenance: "" }).valid, "Missing provenance must fail");
+          assert(!K.validateAnimationClip({ ...validClip, keyframes: [] }).valid, "Empty keyframes must fail");
+        },
+
+        "Strictly enforces boolean type for isLinguisticISL guard": () => {
+          const baseClip = {
+            animationId: "anim_guard_test_v1",
+            gloss: "TEST",
+            durationMs: 500,
+            provenance: "Test",
+            keyframes: [{ timeMs: 0, transforms: [{ bone: "RightArm", rotation: [0, 0, 0] }] }]
+          };
+          assert(!K.validateAnimationClip({ ...baseClip, isLinguisticISL: "false" }).valid, "String 'false' must be rejected");
+          assert(!K.validateAnimationClip({ ...baseClip, isLinguisticISL: 0 }).valid, "Number 0 must be rejected");
+          assert(!K.validateAnimationClip({ ...baseClip, isLinguisticISL: undefined }).valid, "undefined must be rejected");
+          assert(K.validateAnimationClip({ ...baseClip, isLinguisticISL: false }).valid, "boolean false must be accepted");
+          assert(K.validateAnimationClip({ ...baseClip, isLinguisticISL: true }).valid, "boolean true must be accepted");
+        },
+
+        "Rejects non-monotonically ordered keyframes": () => {
+          const badClip = {
+            animationId: "anim_order_test_v1",
+            gloss: "TEST",
+            durationMs: 1000,
+            isLinguisticISL: false,
+            provenance: "Test",
+            keyframes: [
+              { timeMs: 0, transforms: [{ bone: "RightArm", rotation: [0, 0, 0] }] },
+              { timeMs: 600, transforms: [{ bone: "RightArm", rotation: [0, 0, -1] }] },
+              { timeMs: 300, transforms: [{ bone: "RightArm", rotation: [0, 0, -0.5] }] }
+            ]
+          };
+          const res = K.validateAnimationClip(badClip);
+          assert(!res.valid, "Non-monotonic keyframes must be rejected");
+          assert(res.errors.some(e => e.includes("not monotonically ordered")), "Error must mention monotonicity");
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 16: Neutral Rest Pose & Synthetic Technical Motion Prototype
+      // -------------------------------------------------------------
+      await runSuite("16. Neutral Rest Pose & Synthetic Motion Prototype", {
+        "Neutral rest pose passes all transform schema validations": () => {
+          const pose = K.NEUTRAL_REST_POSE;
+          assertEqual(pose.poseId, "pose_neutral_rest_v1");
+          assert(Array.isArray(pose.transforms), "Pose must have transforms array");
+          assert(pose.transforms.length >= 12, "Neutral pose should specify major arm and finger joints");
+
+          pose.transforms.forEach((t, i) => {
+            const res = K.validateBoneTransform(t);
+            assert(res.valid, `Transform ${i} (${t.bone}) in neutral rest pose failed: ${res.errors.join('; ')}`);
+          });
+        },
+
+        "Neutral rest pose lowers both upper arms from T-pose and bends fingers naturally": () => {
+          const pose = K.NEUTRAL_REST_POSE;
+          const rArm = pose.transforms.find(t => t.bone === "RightArm");
+          const lArm = pose.transforms.find(t => t.bone === "LeftArm");
+          assert(rArm, "RightArm transform must exist in neutral pose");
+          assert(lArm, "LeftArm transform must exist in neutral pose");
+          assert(rArm.rotation[2] > 1.0, `RightArm Z rotation should be lowered (got ${rArm.rotation[2]} rad)`);
+          assert(lArm.rotation[2] < -1.0, `LeftArm Z rotation should be lowered (got ${lArm.rotation[2]} rad)`);
+
+          const fingerTransforms = pose.transforms.filter(t => t.bone.includes("HandIndex") || t.bone.includes("HandMiddle"));
+          assert(fingerTransforms.length >= 2, "Finger transforms must be present for natural resting curvature");
+        },
+
+        "Technical test prototype clip is registered, valid, and flagged non-linguistic": () => {
+          const clip = K.TECHNICAL_TEST_CLIP;
+          assertEqual(clip.animationId, "tech_test_motion_v1");
+          assertEqual(clip.gloss, "TECHNICAL_TEST_MOTION");
+          assertEqual(clip.durationMs, 2000);
+          assertEqual(clip.isLinguisticISL, false, "CRITICAL: Must be false for synthetic technical motion");
+          assert(clip.provenance.includes("synthetic technical feasibility motion"), "Provenance must declare synthetic test origin");
+
+          const res = K.validateAnimationClip(clip);
+          assert(res.valid, `Technical test clip failed validation: ${res.errors.join('; ')}`);
+        },
+
+        "Evaluates clip timeline with interpolation across keyframe boundary": () => {
+          const clip = K.TECHNICAL_TEST_CLIP;
+          const t0 = K.evaluateClipAtTime(clip, 0);
+          const tMid = K.evaluateClipAtTime(clip, 300);
+          const tEnd = K.evaluateClipAtTime(clip, 2000);
+
+          assertEqual(t0.timeMs, 0);
+          assertEqual(tEnd.timeMs, 2000);
+          assert(Array.isArray(tMid.transforms), "Midpoint should yield transforms array");
+
+          const rArm0 = t0.transforms.find(t => t.bone === "RightArm");
+          const rArm300 = tMid.transforms.find(t => t.bone === "RightArm");
+          const rArm600 = clip.keyframes[1].transforms.find(t => t.bone === "RightArm");
+
+          const expectedZ = rArm0.rotation[2] + 0.5 * (rArm600.rotation[2] - rArm0.rotation[2]);
+          assert(Math.abs(rArm300.rotation[2] - expectedZ) < 0.05, `Interpolation at 300ms expected ~${expectedZ}, got ${rArm300.rotation[2]}`);
+        },
+
+        "Quaternion Slerp math produces normalized unit quaternions and accurate midpoints": () => {
+          const q1 = [0, 0, 0, 1];
+          const q2 = [0, 0.7071068, 0, 0.7071068];
+          const mid = K.slerpQuaternions(q1, q2, 0.5);
+
+          const mag = Math.sqrt(mid.reduce((s, v) => s + v * v, 0));
+          assert(Math.abs(mag - 1.0) < 1e-6, `Slerp output must be unit quaternion (got magnitude ${mag})`);
+
+          assert(Math.abs(mid[1] - 0.38268) < 0.01, `Expected Y component ~0.38268, got ${mid[1]}`);
+          assert(Math.abs(mid[3] - 0.92388) < 0.01, `Expected W component ~0.92388, got ${mid[3]}`);
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 17: Animation Resolver & Safe Neutral Fallback
+      // -------------------------------------------------------------
+      await runSuite("17. Animation Resolver & Safe Neutral Fallback", {
+        "Resolves registered prototype clip by explicit animationId": () => {
+          const signItem = {
+            gloss: "TEST",
+            category: "lexical",
+            durationMs: 1000,
+            source: "seed_dictionary",
+            animationId: "tech_test_motion_v1"
+          };
+          const res = K.resolveSignAnimation(signItem);
+          assertEqual(res.resolved, true);
+          assertEqual(res.animationId, "tech_test_motion_v1");
+          assertEqual(res.isLinguisticISL, false);
+          assert(res.clip !== null, "Resolved clip must be attached");
+          assertEqual(res.fallbackPose.poseId, "pose_neutral_rest_v1");
+        },
+
+        "Resolves registered clip by matching gloss": () => {
+          const signItem = {
+            gloss: "TECHNICAL_TEST_MOTION",
+            category: "lexical",
+            durationMs: 2000,
+            source: "seed_dictionary"
+          };
+          const res = K.resolveSignAnimation(signItem);
+          assertEqual(res.resolved, true);
+          assertEqual(res.animationId, "tech_test_motion_v1");
+        },
+
+        "Returns resolved: false and safe neutral fallback for un-animated dictionary gloss": () => {
+          const signItem = {
+            gloss: "HELLO",
+            category: "lexical",
+            durationMs: 750,
+            source: "seed_dictionary"
+          };
+          const res = K.resolveSignAnimation(signItem);
+          assertEqual(res.resolved, false, "CRITICAL: HELLO must not claim to be resolved without an asset");
+          assertEqual(res.clip, null);
+          assertEqual(res.animationId, null);
+          assertEqual(res.isLinguisticISL, false);
+          assertEqual(res.fallbackPose.poseId, "pose_neutral_rest_v1");
+          assert(res.reason.includes("No registered 3D animation clip exists"), "Reason must clearly state missing asset");
+        },
+
+        "Never falsely claims lexical or fingerspelled signs have animations without assets": () => {
+          const signs = [
+            { gloss: "THANK_YOU", category: "lexical" },
+            { gloss: "PLEASE", category: "lexical" },
+            { gloss: "A", category: "fingerspelling" },
+            { gloss: "Z", category: "fingerspelling" }
+          ];
+
+          signs.forEach(s => {
+            const res = K.resolveSignAnimation(s);
+            assertEqual(res.resolved, false, `Gloss ${s.gloss} must not claim resolved animation`);
+            assertEqual(res.fallbackPose.poseId, "pose_neutral_rest_v1");
+          });
+        },
+
+        "Gracefully handles null, undefined, or empty signItem input": () => {
+          const resNull = K.resolveSignAnimation(null);
+          assertEqual(resNull.resolved, false);
+          assertEqual(resNull.fallbackPose.poseId, "pose_neutral_rest_v1");
+
+          const resUndefined = K.resolveSignAnimation(undefined);
+          assertEqual(resUndefined.resolved, false);
+
+          const resEmpty = K.resolveSignAnimation({});
+          assertEqual(resEmpty.resolved, false);
+          assertEqual(resEmpty.fallbackPose.poseId, "pose_neutral_rest_v1");
+        }
+      });
+
+      // =============================================================
+      // MILESTONE M3 PHASE 3.4: THREE.JS AVATAR PLAYER PROTOTYPE
+      // =============================================================
+      const P = window.SignBridgeAvatarPlayer;
+      assert(P, "SignBridgeAvatarPlayer failed to load on window");
+      assert(window.THREE, "THREE failed to load on window");
+      assert(window.THREE.GLTFLoader, "THREE.GLTFLoader failed to load on window");
+
+      const testCanvasContainer = document.createElement("div");
+      testCanvasContainer.id = "test-avatar-container";
+      testCanvasContainer.style.width = "320px";
+      testCanvasContainer.style.height = "320px";
+      testCanvasContainer.style.position = "absolute";
+      testCanvasContainer.style.left = "-9999px";
+      document.body.appendChild(testCanvasContainer);
+
+      let sharedPlayer = null;
+
+      // -------------------------------------------------------------
+      // Suite 18: Model Loading & Skeletal Articulation
+      // -------------------------------------------------------------
+      await runSuite("18. Model Loading & Skeletal Articulation", {
+        "SignBridgeAvatarPlayer exports expected classes and constants": () => {
+          assert(P.AvatarPlayer, "AvatarPlayer class should exist");
+          assert(P.AvatarPlayerError, "AvatarPlayerError should exist");
+          assertEqual(P.TECHNICAL_TEST_NOTICE, "Synthetic technical test — NOT a validated ISL sign");
+        },
+
+        "Rejects instantiation without container": () => {
+          let threw = false;
+          try {
+            new P.AvatarPlayer(null);
+          } catch (e) {
+            threw = true;
+            assert(e instanceof P.AvatarPlayerError);
+            assertEqual(e.code, "MISSING_CONTAINER");
+          }
+          assert(threw, "Should throw on null container");
+        },
+
+        "Initializes Three.js WebGL scene, camera, lights, and appends canvas": () => {
+          sharedPlayer = new P.AvatarPlayer(testCanvasContainer, {
+            modelUrl: null,
+            width: 320,
+            height: 320
+          });
+          assert(sharedPlayer.scene instanceof THREE.Scene, "Scene must be THREE.Scene");
+          assert(sharedPlayer.camera instanceof THREE.PerspectiveCamera, "Camera must be THREE.PerspectiveCamera");
+          assert(sharedPlayer.renderer instanceof THREE.WebGLRenderer, "Renderer must be WebGLRenderer");
+          const canvas = testCanvasContainer.querySelector("canvas");
+          assert(canvas !== null, "Canvas element must be mounted inside container");
+        },
+
+        "Loads Y-Bot GLB model from local asset path and sets isLoaded": async () => {
+          await sharedPlayer.loadModel("../assets/models/ybot.glb");
+          assert(sharedPlayer.isLoaded, "Player should be marked isLoaded");
+          assertEqual(sharedPlayer.isLoading, false);
+          assertEqual(sharedPlayer.loadError, null);
+          assert(sharedPlayer.model !== null, "Model scene should be populated");
+        },
+
+        "Discovers all 67 canonical joints on the physical SkinnedMesh": () => {
+          assertEqual(sharedPlayer.bones.size, 67, "Expected exactly 67 canonical bones mapped in Y-Bot rig");
+          assert(sharedPlayer.bones.has("RightArm"), "RightArm joint should be mapped");
+          assert(sharedPlayer.bones.has("LeftArm"), "LeftArm joint should be mapped");
+          assert(sharedPlayer.bones.has("RightHandIndex1"), "Finger bones should be mapped");
+          assert(sharedPlayer.bones.has("LeftHandThumb4"), "Thumb bones should be mapped");
+        },
+
+        "Automatically applies NEUTRAL_REST_POSE upon model load, lowering arms from T-pose": () => {
+          const rArm = sharedPlayer.getBoneTransform("RightArm");
+          const lArm = sharedPlayer.getBoneTransform("LeftArm");
+          assert(rArm !== null, "RightArm transform must exist");
+          assert(lArm !== null, "LeftArm transform must exist");
+
+          assert(rArm.rotation[2] > 1.0, `RightArm Z rotation should be lowered (got ${rArm.rotation[2].toFixed(3)} rad)`);
+          assert(lArm.rotation[2] < -1.0, `LeftArm Z rotation should be lowered (got ${lArm.rotation[2].toFixed(3)} rad)`);
+          assertEqual(sharedPlayer.currentPoseId, "pose_neutral_rest_v1");
+        },
+
+        "Modifies physical bone transforms on the loaded model via applyPose": () => {
+          const testPose = {
+            poseId: "pose_custom_test",
+            transforms: [
+              { bone: "RightArm", rotation: [-0.5, 0.2, -0.8], rotationType: "euler" }
+            ]
+          };
+          sharedPlayer.applyPose(testPose);
+          const rArm = sharedPlayer.getBoneTransform("RightArm");
+          assert(Math.abs(rArm.rotation[0] - (-0.5)) < 0.01, `RightArm X rotation should be -0.5, got ${rArm.rotation[0]}`);
+          assert(Math.abs(rArm.rotation[1] - 0.2) < 0.01, `RightArm Y rotation should be 0.2, got ${rArm.rotation[1]}`);
+          assert(Math.abs(rArm.rotation[2] - (-0.8)) < 0.01, `RightArm Z rotation should be -0.8, got ${rArm.rotation[2]}`);
+        },
+
+        "Handles missing model 404 gracefully with useful error": async () => {
+          const dummyContainer = document.createElement("div");
+          const errorPlayer = new P.AvatarPlayer(dummyContainer, { modelUrl: null });
+          let caught = false;
+          try {
+            await errorPlayer.loadModel("../assets/models/non_existent_model_404.glb");
+          } catch (e) {
+            caught = true;
+            assert(errorPlayer.loadError !== null, "loadError should be set on player");
+            assertEqual(errorPlayer.isLoaded, false);
+            assert(e.code === "MODEL_LOAD_FAILED" || e.message.includes("Failed to load 3D model"));
+          }
+          assert(caught, "Missing model load should reject promise");
+          errorPlayer.dispose();
+        },
+
+        "Viewport initialization and model visibility: verifies frustum culling is disabled on all SkinnedMeshes and canvas pixels show rasterized geometry": () => {
+          assert(sharedPlayer.skinnedMesh, "SkinnedMesh should be populated");
+          let anyMeshCulled = false;
+          sharedPlayer.model.traverse(node => {
+            if (node.isSkinnedMesh || node.isMesh) {
+              if (node.frustumCulled) anyMeshCulled = true;
+            }
+          });
+          assertEqual(anyMeshCulled, false, "All SkinnedMesh and Mesh nodes must have frustumCulled = false to prevent culling");
+
+          // Test rasterized pixels on WebGL canvas
+          sharedPlayer.resetToNeutralPose();
+          sharedPlayer.render();
+          const gl = sharedPlayer.renderer.getContext();
+          const w = sharedPlayer.renderer.domElement.width;
+          const h = sharedPlayer.renderer.domElement.height;
+          const pixels = new Uint8Array(4 * 20 * 20);
+          // Sample a 20x20 region at the center of the viewport (avatar upper chest)
+          gl.readPixels(Math.floor(w / 2 - 10), Math.floor(h / 2 - 10), 20, 20, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+          let nonBgPixels = 0;
+          for (let i = 0; i < pixels.length; i += 4) {
+            // Background clear color is #0f172a (15, 23, 42)
+            if (pixels[i] !== 15 || pixels[i+1] !== 23 || pixels[i+2] !== 42) {
+              nonBgPixels++;
+            }
+          }
+          assert(nonBgPixels > 100, `Expected avatar geometry to be rasterized at viewport center, but got only ${nonBgPixels} non-background pixels (viewport was blank)`);
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 19: Playback Controls, State Machine & Safe Recovery
+      // -------------------------------------------------------------
+      await runSuite("19. Playback Controls & Safe Recovery", {
+        "Plays TECHNICAL_TEST_CLIP and evaluates timeline interpolation on actual bones": () => {
+          const res = sharedPlayer.playClip(K.TECHNICAL_TEST_CLIP);
+          assertEqual(res.success, true);
+          assertEqual(sharedPlayer.isPlaying, true);
+          assertEqual(sharedPlayer.isPaused, false);
+          assertEqual(sharedPlayer.currentTimeMs, 0);
+
+          sharedPlayer.update(600);
+          assertEqual(sharedPlayer.currentTimeMs, 600);
+          const rArm = sharedPlayer.getBoneTransform("RightArm");
+          assert(Math.abs(rArm.rotation[0] - (-0.5)) < 0.05, `Expected RightArm X ~-0.5, got ${rArm.rotation[0]}`);
+          assert(Math.abs(rArm.rotation[2] - 0.4) < 0.05, `Expected RightArm Z ~0.4, got ${rArm.rotation[2]}`);
+        },
+
+        "Pause leaves model bones frozen at current evaluated time": () => {
+          sharedPlayer.pause();
+          assertEqual(sharedPlayer.isPlaying, false);
+          assertEqual(sharedPlayer.isPaused, true);
+          const frozenTime = sharedPlayer.currentTimeMs;
+
+          sharedPlayer.update(500);
+          assertEqual(sharedPlayer.currentTimeMs, frozenTime, "Time must not advance while paused");
+        },
+
+        "Resume continues playback from paused position": () => {
+          sharedPlayer.resume();
+          assertEqual(sharedPlayer.isPlaying, true);
+          assertEqual(sharedPlayer.isPaused, false);
+
+          sharedPlayer.update(300);
+          assert(sharedPlayer.currentTimeMs > 600, "Time should advance after resume");
+        },
+
+        "Restart resets playback to t = 0": () => {
+          sharedPlayer.restart();
+          assertEqual(sharedPlayer.currentTimeMs, 0);
+          assertEqual(sharedPlayer.isPlaying, true);
+          assertEqual(sharedPlayer.isPaused, false);
+          const rArm = sharedPlayer.getBoneTransform("RightArm");
+          assert(rArm.rotation[2] > 1.0, `Restart must restore initial pose (got ${rArm.rotation[2]} rad)`);
+        },
+
+        "Stop returns avatar to neutral rest pose": () => {
+          sharedPlayer.stop();
+          assertEqual(sharedPlayer.isPlaying, false);
+          assertEqual(sharedPlayer.isPaused, false);
+          assertEqual(sharedPlayer.currentPoseId, "pose_neutral_rest_v1");
+          const rArm = sharedPlayer.getBoneTransform("RightArm");
+          assert(rArm.rotation[2] > 1.0, "Right arm must be in neutral rest pose");
+        },
+
+        "Safely handles null or invalid clip by falling back to neutral rest pose": () => {
+          const res = sharedPlayer.playClip(null);
+          assertEqual(res.success, false);
+          assertEqual(sharedPlayer.isPlaying, false);
+          assertEqual(sharedPlayer.currentPoseId, "pose_neutral_rest_v1");
+        },
+
+        "Safely handles playSignItem for un-animated dictionary gloss ('HELLO')": () => {
+          const signItem = { gloss: "HELLO", category: "lexical", durationMs: 750, source: "seed_dictionary" };
+          const res = sharedPlayer.playSignItem(signItem);
+          assertEqual(res.resolved, false);
+          assertEqual(res.isLinguisticISL, false);
+          assertEqual(sharedPlayer.currentPoseId, "pose_neutral_rest_v1");
+          assert(res.notice.includes("held in neutral rest pose"));
+        },
+
+        "Safely handles missing or unknown bones in transforms without crashing": () => {
+          const badPose = {
+            poseId: "pose_missing_bones",
+            transforms: [
+              { bone: "AlienTentacle", rotation: [0, 0, 0] },
+              { bone: "RightArm", rotation: [0, 0, -1.25] }
+            ]
+          };
+          const res = sharedPlayer.applyPose(badPose);
+          assertEqual(res.appliedCount, 1, "Known bone should apply");
+          assertEqual(res.missingCount, 1, "Unknown bone should count as missing");
+          assert(sharedPlayer.missingBonesEncountered.has("AlienTentacle"), "Should record missing bone");
+        },
+
+        "Telemetry status strictly enforces non-linguistic label for synthetic tests": () => {
+          sharedPlayer.playClip(K.TECHNICAL_TEST_CLIP);
+          const st = sharedPlayer.getStatus();
+          assertEqual(st.isLinguisticISL, false, "CRITICAL: Must be false for technical prototype");
+          assertEqual(st.labelNotice, "Synthetic technical test — NOT a validated ISL sign");
+          assertEqual(st.currentClipId, "tech_test_motion_v1");
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 20: Speech-to-Sequence-to-Player Integration & Governance (M3.5)
+      // -------------------------------------------------------------
+      const Router = window.SignBridgeTranslationRouter;
+      const ASL = window.SignBridgeASLTranslator;
+
+      await runSuite("20. Speech-to-Avatar Integration & Separation (M3.5)", {
+        "Router routes recognized transcript to validated ISL SignSequence with seed lexicon": () => {
+          assert(Router, "TranslationRouter must be loaded");
+          const seq = Router.routeTranscriptTranslation("Hello welcome please", "ISL");
+          assertEqual(seq.language, "ISL");
+          assertEqual(seq.signs.length, 3);
+          assertEqual(seq.signs[0].gloss, "HELLO");
+          assertEqual(seq.signs[1].gloss, "WELCOME");
+          assertEqual(seq.signs[2].gloss, "PLEASE");
+          const val = C.validateSignSequence(seq);
+          assert(val.valid, `SignSequence must be valid: ${val.errors.join("; ")}`);
+        },
+
+        "Router strictly preserves ASL pipeline separation and rejects English word substitution": () => {
+          assert(ASL, "ASLTranslator must be loaded");
+          const seq = Router.routeTranscriptTranslation("Hello world", "ASL");
+          assertEqual(seq.language, "ASL");
+          assertEqual(seq.signs.length, 0, "ASL must NOT substitute English words or borrow ISL seed signs");
+          assertEqual(seq.unsupportedWords.length, 2);
+          assertEqual(seq.unsupportedWords[0], "hello");
+          assertEqual(seq.unsupportedWords[1], "world");
+          const val = C.validateSignSequence(seq);
+          assert(val.valid, `ASL SignSequence must be valid: ${val.errors.join("; ")}`);
+        },
+
+        "Router rejects unsupported target sign languages safely": () => {
+          let threw = false;
+          try {
+            Router.routeTranscriptTranslation("Hello", "GERMAN_SIGN");
+          } catch (e) {
+            threw = true;
+            assert(e.message.includes("Unsupported target sign language"));
+          }
+          assert(threw, "Router must throw for unsupported target sign languages");
+        },
+
+        "Avatar player executes SignSequence with registered animation clip": () => {
+          const testSeq = C.createSignSequence({
+            sequenceId: "seq_test_anim_" + Date.now(),
+            language: "ISL",
+            rawTranscript: "tech motion hello",
+            sourceChunkSeq: 0,
+            startMediaTimeMs: 0,
+            endMediaTimeMs: 2750,
+            signs: [
+              C.createSignItem({
+                gloss: "TECHNICAL_TEST_MOTION",
+                category: "lexical",
+                durationMs: 2000,
+                source: "seed_dictionary",
+                animationId: "tech_test_motion_v1"
+              }),
+              C.createSignItem({
+                gloss: "HELLO",
+                category: "lexical",
+                durationMs: 750,
+                source: "seed_dictionary"
+              })
+            ],
+            fingerspellingApplied: false,
+            grammarApplied: false,
+            unsupportedWords: []
+          });
+
+          const res = sharedPlayer.playSignSequence(testSeq);
+          assertEqual(res.success, true);
+          assertEqual(sharedPlayer.isPlaying, true);
+          assertEqual(sharedPlayer.sequencePlaybackState, "PLAYING");
+          assertEqual(sharedPlayer.currentSignGloss, "TECHNICAL_TEST_MOTION");
+          assertEqual(sharedPlayer.currentSignIsFallback, false);
+
+          // Advance by 500ms and verify bone articulation
+          sharedPlayer.update(500);
+          const rArm = sharedPlayer.getBoneTransform("RightArm");
+          assert(rArm !== null, "RightArm must articulate during clip playback");
+
+          // Advance past clip duration (2000ms) to advance to second sign (HELLO)
+          sharedPlayer.update(1600);
+          assertEqual(sharedPlayer.sequenceSignIndex, 1);
+          assertEqual(sharedPlayer.currentSignGloss, "HELLO");
+          assertEqual(sharedPlayer.currentSignIsFallback, true, "HELLO has no 3D clip, must fall back to safe neutral rest pose");
+          assertEqual(sharedPlayer.sequencePlaybackState, "HELD_NEUTRAL");
+        },
+
+        "Avatar player safely handles un-animated and unknown glosses with Neutral Rest Pose": () => {
+          const unknownSeq = C.createSignSequence({
+            sequenceId: "seq_unanimated_" + Date.now(),
+            language: "ISL",
+            rawTranscript: "hello",
+            sourceChunkSeq: 0,
+            startMediaTimeMs: 0,
+            endMediaTimeMs: 800,
+            signs: [
+              C.createSignItem({
+                gloss: "HELLO",
+                category: "lexical",
+                durationMs: 800,
+                source: "seed_dictionary"
+              })
+            ],
+            fingerspellingApplied: false,
+            grammarApplied: false,
+            unsupportedWords: []
+          });
+
+          const res = sharedPlayer.playSignSequence(unknownSeq);
+          assertEqual(res.success, true);
+          assertEqual(sharedPlayer.currentSignIsFallback, true);
+          assertEqual(sharedPlayer.sequencePlaybackState, "HELD_NEUTRAL");
+          assertEqual(sharedPlayer.currentPoseId, "pose_neutral_rest_v1", "Must hold avatar in neutral rest pose");
+
+          // Advance past duration to complete sequence
+          sharedPlayer.update(850);
+          assertEqual(sharedPlayer.sequencePlaybackState, "COMPLETED");
+          assertEqual(sharedPlayer.isPlaying, false);
+        },
+
+        "Avatar player safely handles empty sequence (silence or empty transcript)": () => {
+          const emptySeq = Router.routeTranscriptTranslation("", "ISL");
+          const res = sharedPlayer.playSignSequence(emptySeq);
+          assertEqual(res.success, true);
+          assertEqual(res.signsCount, 0);
+          assertEqual(res.status, "EMPTY_SEQUENCE");
+          assertEqual(sharedPlayer.sequencePlaybackState, "COMPLETED");
+          assertEqual(sharedPlayer.isPlaying, false);
+        },
+
+        "In-flight sequence playback interruption safely cancels previous sequence": () => {
+          const seq1 = Router.routeTranscriptTranslation("Hello welcome please", "ISL");
+          const seq2 = Router.routeTranscriptTranslation("Thank you", "ISL");
+
+          sharedPlayer.playSignSequence(seq1);
+          assertEqual(sharedPlayer.activeSequence.sequenceId, seq1.sequenceId);
+
+          // Interrupt in-flight
+          sharedPlayer.playSignSequence(seq2);
+          assertEqual(sharedPlayer.lastInterruptedSequenceId, seq1.sequenceId);
+          assertEqual(sharedPlayer.activeSequence.sequenceId, seq2.sequenceId);
+          assertEqual(sharedPlayer.sequenceSignIndex, 0);
+        },
+
+        "Duplicate transcript events are handled safely without corrupting player state": () => {
+          const seqA = Router.routeTranscriptTranslation("Hello", "ISL");
+          const seqB = Router.routeTranscriptTranslation("Hello", "ISL");
+
+          sharedPlayer.playSignSequence(seqA);
+          sharedPlayer.update(200);
+          sharedPlayer.playSignSequence(seqB);
+          assertEqual(sharedPlayer.isPlaying, true);
+          assertEqual(sharedPlayer.activeSequence.signs[0].gloss, "HELLO");
+        },
+
+        "Governance warnings are strictly enforced during sequence playback": () => {
+          const st = sharedPlayer.getStatus();
+          assert(st.labelNotice.length > 0, "Notice must be populated");
+          assertEqual(st.isLinguisticISL, false, "Must not claim linguistic ISL validity for test sequence");
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 21: Real Sourced Sign-Language Vertical Slice (ISL Namaste)
+      // -------------------------------------------------------------
+      await runSuite("21. Real Sourced Sign-Language Vertical Slice (ISL Namaste)", {
+        "Canonical ISL Namaste clip passes validation and is registered in KeyframeRegistry": () => {
+          assert(K.ISL_NAMASTE_CLIP, "ISL_NAMASTE_CLIP must be exported");
+          assertEqual(K.ISL_NAMASTE_CLIP.animationId, "isl_namaste_godl_v1");
+          assertEqual(K.ISL_NAMASTE_CLIP.gloss, "NAMASTE");
+          assertEqual(K.ISL_NAMASTE_CLIP.isLinguisticISL, true);
+          assert(K.ISL_NAMASTE_CLIP.provenance.includes("ISLRTC"), "Provenance must cite ISLRTC");
+          assert(K.ISL_NAMASTE_CLIP.provenance.includes("GODL"), "Provenance must cite Government Open Data License (GODL)");
+          const val = K.validateAnimationClip(K.ISL_NAMASTE_CLIP);
+          assert(val.valid, `ISL_NAMASTE_CLIP must pass validator: ${val.errors.join('; ')}`);
+        },
+
+        "Translator maps 'namaste' and 'greetings' to canonical NAMASTE with ISLRTC animationId": () => {
+          const seq = Router.routeTranscriptTranslation("namaste", "ISL");
+          assertEqual(seq.signs.length, 1);
+          assertEqual(seq.signs[0].gloss, "NAMASTE");
+          assertEqual(seq.signs[0].animationId, "isl_namaste_godl_v1");
+          assertEqual(seq.signs[0].category, "lexical");
+          assertEqual(seq.unsupportedWords.length, 0);
+
+          const seq2 = Router.routeTranscriptTranslation("greetings", "ISL");
+          assert(seq2.signs.length > 0, "Greetings should produce sign");
+        },
+
+        "Animation resolver resolves NAMASTE to registered linguistic clip with isLinguisticISL=true": () => {
+          const signItem = C.createSignItem({
+            gloss: "NAMASTE",
+            category: "lexical",
+            durationMs: 1800,
+            source: "seed_dictionary",
+            animationId: "isl_namaste_godl_v1"
+          });
+          const resolved = K.resolveSignAnimation(signItem);
+          assertEqual(resolved.resolved, true);
+          assertEqual(resolved.isLinguisticISL, true);
+          assertEqual(resolved.animationId, "isl_namaste_godl_v1");
+          assertEqual(resolved.clip.gloss, "NAMASTE");
+        },
+
+        "Avatar player articulates real Namaste sign with bilateral prayer pose and head nod": () => {
+          const seq = Router.routeTranscriptTranslation("namaste", "ISL");
+          const playRes = sharedPlayer.playSignSequence(seq);
+          assertEqual(playRes.success, true);
+          assertEqual(sharedPlayer.sequencePlaybackState, "PLAYING");
+          assertEqual(sharedPlayer.currentSignGloss, "NAMASTE");
+          assertEqual(sharedPlayer.currentSignIsFallback, false);
+
+          // Advance to peak prayer pose (t = 900ms)
+          sharedPlayer.update(900);
+          const rArm = sharedPlayer.getBoneTransform("RightArm");
+          const lArm = sharedPlayer.getBoneTransform("LeftArm");
+          const head = sharedPlayer.getBoneTransform("Head");
+
+          assert(rArm && lArm && head, "All required bones must exist on rig");
+          // Verify bilateral arm flexion (arms raised forward towards chest)
+          assert(rArm.rotation[0] < -0.3, `RightArm X should be flexed forward (got ${rArm.rotation[0].toFixed(2)})`);
+          assert(lArm.rotation[0] < -0.3, `LeftArm X should be flexed forward (got ${lArm.rotation[0].toFixed(2)})`);
+          // Verify respectful head nod forward
+          assert(head.rotation[0] > 0.1, `Head X should tilt forward in respectful bow (got ${head.rotation[0].toFixed(2)})`);
+
+          // Verify telemetry status confirms linguistic ISL
+          const st = sharedPlayer.getStatus();
+          assertEqual(st.isLinguisticISL, true, "Telemetry must confirm genuine linguistic sign");
+          assertEqual(st.labelNotice, "Verified linguistic ISL sign");
+        },
+
+        "Completes Namaste sign and smoothly returns to neutral rest pose": () => {
+          // Advance past total duration (1800ms)
+          sharedPlayer.update(1000);
+          assertEqual(sharedPlayer.sequencePlaybackState, "COMPLETED");
+          assertEqual(sharedPlayer.isPlaying, false);
+          const rArmNeutral = sharedPlayer.getBoneTransform("RightArm");
+          assert(rArmNeutral.rotation[2] > 1.0, "Right arm must return to lowered rest position");
+        },
+
+        "Fallback safety: unavailable words trigger neutral rest pose without fabricated signing": () => {
+          const unavailSeq = Router.routeTranscriptTranslation("elephants zoo", "ISL");
+          assertEqual(unavailSeq.signs.length, 0);
+          assertEqual(unavailSeq.unsupportedWords.length, 2);
+          assertEqual(unavailSeq.unsupportedWords[0], "elephants");
+          assertEqual(unavailSeq.unsupportedWords[1], "zoo");
+          const res = sharedPlayer.playSignSequence(unavailSeq);
+          assertEqual(res.status, "EMPTY_SEQUENCE");
+          assertEqual(sharedPlayer.isPlaying, false);
+          assertEqual(sharedPlayer.sequencePlaybackState, "COMPLETED");
+        },
+
+        "Preserves ASL pipeline separation and prevents cross-language asset substitution": () => {
+          const aslSeq = Router.routeTranscriptTranslation("namaste", "ASL");
+          assertEqual(aslSeq.language, "ASL");
+          assertEqual(aslSeq.signs.length, 0, "ASL pipeline must not use ISL Namaste clip");
+          assertEqual(aslSeq.unsupportedWords.length, 1);
+          assertEqual(aslSeq.unsupportedWords[0], "namaste");
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 22: MoCap Candidate Clip Retargeting & Y-Bot Kinematics (M3.9)
+      // -------------------------------------------------------------
+      await runSuite("22. MoCap Candidate Clip Retargeting & Y-Bot Kinematics (M3.9)", {
+        "Candidate MoCap animation clip passes declarative schema validation": async () => {
+          const resp = await fetch("../assets/animations/isl_namaste_mocap_candidate_v1.json");
+          assert(resp.ok, "Candidate clip JSON must be accessible via HTTP");
+          const candidate = await resp.json();
+          assertEqual(candidate.animationId, "isl_namaste_mocap_candidate_v1");
+          assertEqual(candidate.gloss, "NAMASTE");
+          assertEqual(candidate.durationMs, 3080);
+          assertEqual(candidate.isLinguisticISL, true);
+          assertEqual(candidate.validationStatus, "experimental_awaiting_validation");
+          assertEqual(candidate.captureMethod, "mediapipe_holistic_mocap_retargeted");
+          assert(candidate.keyframes.length === 77, "Must contain all 77 retargeted keyframes");
+
+          const val = K.validateAnimationClip(candidate);
+          assert(val.valid, `Candidate clip must pass validator: ${val.errors.join('; ')}`);
+        },
+
+        "KeyframeRegistry successfully registers candidate MoCap clip without breaking production assets": async () => {
+          const resp = await fetch("../assets/animations/isl_namaste_mocap_candidate_v1.json");
+          const candidate = await resp.json();
+          const registered = K.registerAnimationClip(candidate);
+          assertEqual(registered, true);
+
+          const registeredClips = K.getRegisteredClips();
+          assert(registeredClips.has("isl_namaste_mocap_candidate_v1"), "Must exist in registry");
+          // Production clip remains intact
+          assert(registeredClips.has("isl_namaste_godl_v1"), "Production clip must remain registered");
+        },
+
+        "Avatar player executes candidate MoCap animation with smooth bilateral arm and head movement": async () => {
+          const resp = await fetch("../assets/animations/isl_namaste_mocap_candidate_v1.json");
+          const candidate = await resp.json();
+
+          const playRes = sharedPlayer.playClip(candidate);
+          assertEqual(playRes.success, true);
+          assertEqual(sharedPlayer.isPlaying, true);
+          assertEqual(sharedPlayer.currentClip.animationId, "isl_namaste_mocap_candidate_v1");
+
+          // Advance to peak contact at t = 1400ms (Frame 35)
+          sharedPlayer.update(1400);
+          const rArm = sharedPlayer.getBoneTransform("RightArm");
+          const lArm = sharedPlayer.getBoneTransform("LeftArm");
+          const head = sharedPlayer.getBoneTransform("Head");
+
+          assert(rArm && lArm && head, "Bones must be present on rig");
+          // Both arms flexed forward in prayer pose
+          assert(rArm.rotation[0] < -0.20, `RightArm X flexed forward (got ${rArm.rotation[0].toFixed(2)})`);
+          assert(lArm.rotation[0] < -0.20, `LeftArm X flexed forward (got ${lArm.rotation[0].toFixed(2)})`);
+          // Head nodded forward
+          assert(head.rotation[0] > 0.05, `Head X nodded forward (got ${head.rotation[0].toFixed(2)})`);
+
+          // Advance to completion (t = 3080ms)
+          sharedPlayer.update(1700);
+          assertEqual(sharedPlayer.isPlaying, false, "Should complete playback");
+          const rArmNeutral = sharedPlayer.getBoneTransform("RightArm");
+          assert(rArmNeutral.rotation[2] > 1.0, "Right arm must return to lowered rest position");
+        }
+      });
+
+      // -------------------------------------------------------------
+      // Suite 23: ISL Review Readiness & Safe Candidate Integration (M3.10)
+      // -------------------------------------------------------------
+      await runSuite("23. ISL Review Readiness & Safe Candidate Integration (M3.10)", {
+        "Candidate animation metadata strictly enforces experimental status": async () => {
+          const resp = await fetch("../assets/animations/isl_namaste_mocap_candidate_v1.json");
+          const candidate = await resp.json();
+          assertEqual(candidate.validationStatus, "experimental_awaiting_validation");
+          assert(candidate.provenance.includes("awaiting formal Deaf-native sign validation panel review"));
+          assertEqual(candidate.metadata.lowConfidenceFrameIndices.length, 3);
+          assert(candidate.metadata.lowConfidenceFrameIndices.includes(22));
+          assert(candidate.metadata.lowConfidenceFrameIndices.includes(59));
+          assert(candidate.metadata.lowConfidenceFrameIndices.includes(62));
+        },
+
+        "Safe separation: Production lexicon resolves to isl_namaste_godl_v1 and prevents auto-promotion": () => {
+          const resolved = K.resolveSignAnimation({ gloss: "NAMASTE" });
+          assertEqual(resolved.resolved, true);
+          assertEqual(resolved.animationId, "isl_namaste_godl_v1", "Production must resolve to vetted baseline, not candidate");
+        },
+
+        "Timeline seeking and frame scrubber precision across key intervals": async () => {
+          const resp = await fetch("../assets/animations/isl_namaste_mocap_candidate_v1.json");
+          const candidate = await resp.json();
+
+          // Test Frame 22 (880ms - Upward stroke anomaly)
+          const f22 = K.evaluateClipAtTime(candidate, 880);
+          assertEqual(f22.timeMs, 880);
+          assert(f22.transforms.length > 0);
+
+          // Test Frame 40 (1600ms - Peak hold)
+          const f40 = K.evaluateClipAtTime(candidate, 1600);
+          assertEqual(f40.timeMs, 1600);
+          const rForeArm = f40.boneMap.get("RightForeArm");
+          assert(rForeArm && rForeArm.rotation[0] > 0.5, "Forearm must be flexed in prayer hold");
+
+          // Test Frame 59 (2360ms - Parting occlusion)
+          const f59 = K.evaluateClipAtTime(candidate, 2360);
+          assertEqual(f59.timeMs, 2360);
+
+          // Test Frame 62 (2480ms - Lap return boundary)
+          const f62 = K.evaluateClipAtTime(candidate, 2480);
+          assertEqual(f62.timeMs, 2480);
+        },
+
+        "Graceful handling of unresolvable sign item in player": () => {
+          const res = sharedPlayer.playSignItem({ gloss: "UNKNOWN_TEST_GLOSS_XYZ" });
+          assertEqual(res.resolved, false);
+          assertEqual(sharedPlayer.currentPoseId, "pose_neutral_rest_v1");
+        },
+
+        "Review record schema and cryptographic SHA-256 traceability (M3.11)": async () => {
+          const resp = await fetch("../assets/animations/isl_namaste_mocap_candidate_v1.json");
+          const buffer = await resp.arrayBuffer();
+          
+          // Verify SHA-256 via Web Crypto
+          const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          const hexHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+          assertEqual(hexHash, "6f24e60f7f55d71482133790ca60f6a52682a38f7f6b32c8921480586cef4a46");
+
+          // Validate review record schema contract
+          const mockReviewRecord = {
+            reviewSchemaVersion: "signbridge_review_schema_v1.0.0",
+            candidateId: "isl_namaste_mocap_candidate_v1",
+            candidateVersion: "v1.0.0",
+            candidateFileSha256: hexHash,
+            referenceVideoSha256: "129811572acc6a236fb62b4ade143df8770b7fdcc5249d5facffc349b16a18b8",
+            validationStatus: "experimental_awaiting_validation",
+            parameterRatings: {
+              handshape: "acceptable",
+              location: "acceptable",
+              orientation: "acceptable",
+              movement: "acceptable",
+              non_manuals: "not_assessable"
+            },
+            unassessableDimensions: ["non_manuals"],
+            overallVerdict: "provisional_approval"
+          };
+
+          assertEqual(mockReviewRecord.reviewSchemaVersion, "signbridge_review_schema_v1.0.0");
+          assertEqual(mockReviewRecord.candidateFileSha256, hexHash);
+          assert(mockReviewRecord.unassessableDimensions.includes("non_manuals"));
+        },
+
+        "Dispose cleans up Three.js renderer and releases resources": () => {
+          sharedPlayer.dispose();
+          assertEqual(sharedPlayer.isDisposed, true);
+          assertEqual(sharedPlayer.animFrameId, null);
+          assertEqual(sharedPlayer.bones.size, 0);
+          if (testCanvasContainer.parentNode) {
+            testCanvasContainer.parentNode.removeChild(testCanvasContainer);
+          }
+        }
+      });
+
+      // Render summary
+      const passed = results.filter(r => r.status === "PASS").length;
+      const failed = results.filter(r => r.status === "FAIL").length;
+      summary.innerHTML = `Test Run Complete: ${results.length} total | <span class="${failed ? 'fail' : 'pass'}">${passed} PASSED | ${failed} FAILED</span>`;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SignBridge — 3D Avatar Player Prototype (Phase 3.4)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #090d16;
+      color: #f1f5f9;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    header {
+      width: 100%;
+      max-width: 860px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      color: #94a3b8;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .governance-banner {
+      display: inline-block;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .main-grid {
+      display: grid;
+      grid-template-columns: 360px 480px;
+      gap: 20px;
+      width: 100%;
+      max-width: 860px;
+    }
+    .viewport-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    #avatar-container {
+      width: 100%;
+      height: 440px;
+      background: #020617;
+      position: relative;
+    }
+    .viewport-overlay-status {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(4px);
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-family: monospace;
+      color: #38bdf8;
+      pointer-events: none;
+    }
+    .controls-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .section-title {
+      font-size: 14px;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 1px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    button {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #334155;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    button:hover:not(:disabled) {
+      background: #334155;
+      border-color: #475569;
+    }
+    button:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    button.primary {
+      background: #0284c7;
+      border-color: #0369a1;
+      color: #ffffff;
+    }
+    button.primary:hover:not(:disabled) {
+      background: #0369a1;
+    }
+    button.danger {
+      background: #991b1b;
+      border-color: #7f1d1d;
+    }
+    button.danger:hover:not(:disabled) {
+      background: #7f1d1d;
+    }
+    .telemetry-box {
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #94a3b8;
+    }
+    .telemetry-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e293b;
+      padding: 3px 0;
+    }
+    .telemetry-row:last-child {
+      border-bottom: none;
+    }
+    .telemetry-val {
+      color: #f1f5f9;
+      font-weight: 600;
+    }
+    .progress-bar-wrap {
+      width: 100%;
+      height: 8px;
+      background: #1e293b;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .progress-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: #38bdf8;
+      transition: width 0.05s linear;
+    }
+    .bone-inspector {
+      font-size: 11px;
+      color: #cbd5e1;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-loaded { background: #065f46; color: #6ee7b7; }
+    .badge-playing { background: #075985; color: #7dd3fc; }
+    .badge-paused { background: #854d0e; color: #fde047; }
+    .badge-neutral { background: #374151; color: #d1d5db; }
+    .diagnostic-card {
+      background: #0b1329;
+      border: 1px solid #1e3a8a;
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-top: 20px;
+      width: 100%;
+      max-width: 860px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .diag-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 8px;
+    }
+    .diag-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      font-family: monospace;
+      font-size: 11.5px;
+    }
+    .diag-block {
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 10px 12px;
+      line-height: 1.55;
+    }
+    .diag-block h4 {
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+    .diag-ok { color: #34d399; font-weight: 600; }
+    .diag-warn { color: #facc15; font-weight: 600; }
+    .diag-err { color: #f87171; font-weight: 600; }
+
+    /* M3.5 Speech-to-Avatar Pipeline styles */
+    .pipeline-card {
+      background: #0f172a;
+      border: 1px solid #0284c7;
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-top: 20px;
+      width: 100%;
+      max-width: 860px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .pipeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 8px;
+    }
+    .pipeline-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pipeline-input-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .pipeline-input {
+      flex: 1;
+      min-width: 240px;
+      background: #020617;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 9px 12px;
+      color: #f8fafc;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .pipeline-input:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+    .lang-select {
+      background: #020617;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 9px 12px;
+      color: #f8fafc;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .lang-select:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+    .badge-isl { background: #065f46; color: #6ee7b7; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; }
+    .badge-asl { background: #854d0e; color: #fde047; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; }
+  </style>
+
+  <!-- Bundled local dependencies with cache busters to guarantee fresh delivery -->
+  <script src="../lib/three.min.js?v=20261018"></script>
+  <script src="../lib/GLTFLoader.js?v=20261018"></script>
+  <script src="../models/sign_contracts.js?v=20261018_v3"></script>
+  <script src="../translation/isl_translator.js?v=20261018_v3"></script>
+  <script src="../translation/asl_translator.js?v=20261018_v3"></script>
+  <script src="../translation/translation_router.js?v=20261018_v3"></script>
+  <script src="../animation/keyframe_registry.js?v=20261018_v3"></script>
+  <script src="../animation/avatar_player.js?v=20261018_v3"></script>
+</head>
+<body>
+  <header>
+    <h1>SignBridge — 3D Avatar Player Prototype</h1>
+    <p class="subtitle">Milestone M3 Phase 3.4 Feasibility Demonstration — Local WebGL Viewport & Skeletal Articulation</p>
+    <div class="governance-banner">
+      &#9888; Synthetic technical test — NOT a validated ISL sign
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <!-- Viewport Container -->
+    <div class="viewport-card">
+      <div id="avatar-container">
+        <div id="viewport-status" class="viewport-overlay-status">Initializing WebGL...</div>
+      </div>
+      <div style="padding: 12px; background: #0f172a; border-top: 1px solid #1e293b;">
+        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+          <span id="clip-title">TECH_TEST_MOTION (2000 ms)</span>
+          <span id="time-display">0 / 2000 ms</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div id="progress-fill" class="progress-bar-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls & Inspector Panel -->
+    <div class="controls-card">
+      <div>
+        <div class="section-title">Playback Controls</div>
+        <div class="button-group">
+          <button id="btn-play" class="primary">&#9658; Play Synthetic Test</button>
+          <button id="btn-pause">&#10074;&#10074; Pause</button>
+          <button id="btn-resume">&#9658; Resume</button>
+          <button id="btn-restart">&#8635; Restart</button>
+          <button id="btn-neutral">&#9632; Return to Neutral</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title">Error & Fallback Verification</div>
+        <div class="button-group">
+          <button id="btn-test-missing" class="danger">Test Missing Clip Fallback</button>
+          <button id="btn-test-unregistered" class="danger">Test 'HELLO' (Unregistered Asset)</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title">Player Telemetry</div>
+        <div class="telemetry-box">
+          <div class="telemetry-row">
+            <span>Model Loading:</span>
+            <span id="tel-loaded" class="telemetry-val">Loading...</span>
+          </div>
+          <div class="telemetry-row">
+            <span>Player State:</span>
+            <span id="tel-state" class="telemetry-val"><span class="status-badge badge-neutral">INITIALIZING</span></span>
+          </div>
+          <div class="telemetry-row">
+            <span>Active Pose / Clip:</span>
+            <span id="tel-clip" class="telemetry-val">None</span>
+          </div>
+          <div class="telemetry-row">
+            <span>Linguistic Validity:</span>
+            <span id="tel-isl-guard" class="telemetry-val" style="color: #f87171;">false (Synthetic test)</span>
+          </div>
+          <div class="telemetry-row">
+            <span>Skeleton Joints Mapped:</span>
+            <span id="tel-bones" class="telemetry-val">0 / 67</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title">Live Joint Inspector (Right Arm)</div>
+        <div class="telemetry-box bone-inspector" id="joint-telemetry">
+          RightArm: [X: 0.00, Y: 0.00, Z: 0.00] rad<br>
+          RightForeArm: [X: 0.00, Y: 0.00, Z: 0.00] rad<br>
+          RightHand: [X: 0.00, Y: 0.00, Z: 0.00] rad
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Speech-to-Avatar Integration Pipeline (Milestone M4) -->
+  <div class="pipeline-card">
+    <div class="pipeline-header">
+      <div class="pipeline-title">
+        <span>&#127897;&#65039; Local Speech-to-Avatar Integration Pipeline (M4)</span>
+        <span id="pipe-lang-badge" class="badge-isl">TARGET: ISL</span>
+      </div>
+      <div>
+        <button id="btn-check-backend" style="padding: 6px 12px; font-size: 11px;">&#128260; Check Whisper Backend (8765)</button>
+      </div>
+    </div>
+
+    <!-- Live Tab Audio & Extension Bridge Status (M4) -->
+    <div class="telemetry-box" style="margin-bottom: 14px; background: #0c1322; border: 1px solid #2563eb; padding: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-weight: 700; color: #38bdf8; font-size: 13px;">&#128225; Live Tab Audio &amp; Extension Bridge (M4)</span>
+        <span id="bridge-status-badge" class="badge-isl" style="background: #1e293b; color: #94a3b8;">BRIDGE: STANDBY</span>
+      </div>
+      <div class="telemetry-row">
+        <span>Capture Session:</span>
+        <span id="bridge-session-id" class="telemetry-val">None (Capture idle)</span>
+      </div>
+      <div class="telemetry-row">
+        <span>Latest Live Transcript:</span>
+        <span id="bridge-live-transcript" class="telemetry-val" style="color: #38bdf8; font-weight: 700;">Waiting for speech in active tab...</span>
+      </div>
+      <div class="telemetry-row">
+        <span>ASR Confidence:</span>
+        <span id="bridge-confidence" class="telemetry-val">--</span>
+      </div>
+      <div class="telemetry-row">
+        <span>Live Chunk Sequence:</span>
+        <span id="bridge-chunk-seq" class="telemetry-val">#0</span>
+      </div>
+      <div class="telemetry-row">
+        <span>Linguistic Routing:</span>
+        <span id="bridge-routing-status" class="telemetry-val" style="color: #94a3b8;">Ready for live speech events</span>
+      </div>
+    </div>
+
+    <!-- Quick Sample Benchmarks -->
+    <div style="margin-bottom: 14px;">
+      <div class="section-title">Benchmark Transcripts (Deterministic Integration Tests)</div>
+      <div class="button-group">
+        <button id="btn-sample-namaste" class="primary" style="background: #059669; border-color: #10b981;">&#10004; "Namaste" (ISLRTC Real Sign)</button>
+        <button id="btn-sample-hello">"Hello"</button>
+        <button id="btn-sample-thankyou">"Thank you"</button>
+        <button id="btn-sample-mixed">"Hello world"</button>
+        <button id="btn-sample-multi">"Welcome please"</button>
+        <button id="btn-sample-unknown" class="danger">"Computer internet"</button>
+        <button id="btn-sample-empty">"" (Empty)</button>
+        <button id="btn-sample-demo-combo" class="primary">&#9658; Tech Motion + Hello (Combo)</button>
+      </div>
+    </div>
+
+    <!-- Live Input & Translation Controls -->
+    <div class="pipeline-input-row">
+      <select id="select-target-lang" class="lang-select">
+        <option value="ISL">Target: ISL (Indian Sign Language)</option>
+        <option value="ASL">Target: ASL (American Sign Language - M5 Planned)</option>
+      </select>
+      <input id="input-transcript" type="text" class="pipeline-input" placeholder="Enter transcript or recognized speech (e.g. 'Hello welcome')..." value="Hello welcome">
+      <button id="btn-translate-play" class="primary">&#9658; Translate &amp; Sign</button>
+      <button id="btn-interrupt" class="danger">&#9889; Interrupt</button>
+    </div>
+
+    <!-- Pipeline Telemetry -->
+    <div>
+      <div class="section-title">Speech-to-Sign Pipeline Telemetry</div>
+      <div class="telemetry-box">
+        <div class="telemetry-row">
+          <span>Recognized Transcript:</span>
+          <span id="tel-pipe-transcript" class="telemetry-val">"Hello welcome"</span>
+        </div>
+        <div class="telemetry-row">
+          <span>Selected Target Language:</span>
+          <span id="tel-pipe-lang" class="telemetry-val">ISL</span>
+        </div>
+        <div class="telemetry-row">
+          <span>Translation Status:</span>
+          <span id="tel-pipe-status" class="telemetry-val">IDLE</span>
+        </div>
+        <div class="telemetry-row">
+          <span>Sign Sequence ID:</span>
+          <span id="tel-pipe-seq-id" class="telemetry-val">None</span>
+        </div>
+        <div class="telemetry-row">
+          <span>Generated Signs:</span>
+          <span id="tel-pipe-signs" class="telemetry-val">0 signs</span>
+        </div>
+        <div class="telemetry-row">
+          <span>Unsupported Words:</span>
+          <span id="tel-pipe-unsupported" class="telemetry-val" style="color: #cbd5e1;">None</span>
+        </div>
+        <div class="telemetry-row">
+          <span>Current Active Gloss:</span>
+          <span id="tel-pipe-current-gloss" class="telemetry-val" style="color: #38bdf8;">None</span>
+        </div>
+        <div class="telemetry-row">
+          <span>Playback Fallback Mode:</span>
+          <span id="tel-pipe-fallback" class="telemetry-val">Neutral (Safe Fallback)</span>
+        </div>
+        <div class="telemetry-row">
+          <span>Avatar Playback State:</span>
+          <span id="tel-pipe-player-state" class="telemetry-val"><span class="status-badge badge-neutral">IDLE</span></span>
+        </div>
+        <div class="telemetry-row">
+          <span>Whisper Local Service:</span>
+          <span id="tel-whisper-backend" class="telemetry-val" style="color: #94a3b8;">Not Checked (Click 'Check Whisper Backend')</span>
+        </div>
+        <div class="telemetry-row">
+          <span>Governance &amp; Linguistic Notice:</span>
+          <span id="tel-pipe-notice" class="telemetry-val" style="color: #fca5a5; font-size: 11px;">Synthetic technical test — NOT a validated sign</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Runtime Diagnostic Inspector Panel (Requirement 3) -->
+  <div class="diagnostic-card">
+    <div class="diag-title">
+      <span>&#128269; Live Runtime Diagnostics (Phase 3.4 In-Browser Verification)</span>
+      <span id="diag-fps-badge" class="diag-ok" style="font-size: 11px;">ACTIVE</span>
+    </div>
+    <div class="diag-grid">
+      <div class="diag-block" id="diag-block-deps">
+        <h4>1. Dependencies &amp; Revisions</h4>
+        <div>Three.js: <span id="diag-three" class="diag-ok">Checking...</span></div>
+        <div>GLTFLoader: <span id="diag-gltf" class="diag-ok">Checking...</span></div>
+        <div>KeyframeRegistry: <span id="diag-reg-ver" class="diag-ok">Checking...</span></div>
+        <div>AvatarPlayer: <span id="diag-player-ver" class="diag-ok">Checking...</span></div>
+      </div>
+
+      <div class="diag-block" id="diag-block-webgl">
+        <h4>2. WebGL Context &amp; Canvas</h4>
+        <div>WebGL Context: <span id="diag-webgl-status" class="diag-ok">Checking...</span></div>
+        <div>GPU / Driver: <span id="diag-webgl-renderer">Checking...</span></div>
+        <div>Canvas Sizing: <span id="diag-canvas-size">Checking...</span></div>
+        <div>Canvas Obscured / Covering: <span id="diag-canvas-obscured" class="diag-ok">Checking...</span></div>
+        <div>gl.getError(): <span id="diag-gl-error" class="diag-ok">0 (NO_ERROR)</span></div>
+      </div>
+
+      <div class="diag-block" id="diag-block-model">
+        <h4>3. 3D Model &amp; Meshes</h4>
+        <div>Model Status: <span id="diag-model-status">Loading...</span></div>
+        <div>Visible Meshes: <span id="diag-meshes-count">0</span></div>
+        <div>Frustum Culling: <span id="diag-frustum-culling" class="diag-ok">Checking...</span></div>
+        <div>World Bounds: <span id="diag-world-bounds" style="font-size: 10.5px;">Pending load...</span></div>
+        <div>Camera Framing: <span id="diag-camera-framing" style="font-size: 10.5px;">[0, 1.30, 1.65]</span></div>
+      </div>
+
+      <div class="diag-block" id="diag-block-anim">
+        <h4>4. Animation &amp; Render Loop</h4>
+        <div>Render Call Ticks: <span id="diag-render-count" class="diag-ok">0</span></div>
+        <div>Render Loop: <span id="diag-render-loop" class="diag-ok">Running</span></div>
+        <div>Model Load Error: <span id="diag-load-error" class="diag-ok">None</span></div>
+        <div>Render Exception: <span id="diag-render-error" class="diag-ok">None</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let player = null;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const container = document.getElementById("avatar-container");
+      const statusOverlay = document.getElementById("viewport-status");
+      const timeDisplay = document.getElementById("time-display");
+      const progressFill = document.getElementById("progress-fill");
+      const telLoaded = document.getElementById("tel-loaded");
+      const telState = document.getElementById("tel-state");
+      const telClip = document.getElementById("tel-clip");
+      const telBones = document.getElementById("tel-bones");
+      const jointTelemetry = document.getElementById("joint-telemetry");
+
+      const btnPlay = document.getElementById("btn-play");
+      const btnPause = document.getElementById("btn-pause");
+      const btnResume = document.getElementById("btn-resume");
+      const btnRestart = document.getElementById("btn-restart");
+      const btnNeutral = document.getElementById("btn-neutral");
+      const btnMissing = document.getElementById("btn-test-missing");
+      const btnUnreg = document.getElementById("btn-test-unregistered");
+
+      // Pipeline UI elements
+      const selectTargetLang = document.getElementById("select-target-lang");
+      const pipeLangBadge = document.getElementById("pipe-lang-badge");
+      const inputTranscript = document.getElementById("input-transcript");
+      const btnTranslatePlay = document.getElementById("btn-translate-play");
+      const btnInterrupt = document.getElementById("btn-interrupt");
+      const btnCheckBackend = document.getElementById("btn-check-backend");
+
+      const btnSampleNamaste = document.getElementById("btn-sample-namaste");
+      const btnSampleHello = document.getElementById("btn-sample-hello");
+      const btnSampleThankYou = document.getElementById("btn-sample-thankyou");
+      const btnSampleMixed = document.getElementById("btn-sample-mixed");
+      const btnSampleMulti = document.getElementById("btn-sample-multi");
+      const btnSampleUnknown = document.getElementById("btn-sample-unknown");
+      const btnSampleEmpty = document.getElementById("btn-sample-empty");
+      const btnSampleDemoCombo = document.getElementById("btn-sample-demo-combo");
+
+      const telPipeTranscript = document.getElementById("tel-pipe-transcript");
+      const telPipeLang = document.getElementById("tel-pipe-lang");
+      const telPipeStatus = document.getElementById("tel-pipe-status");
+      const telPipeSeqId = document.getElementById("tel-pipe-seq-id");
+      const telPipeSigns = document.getElementById("tel-pipe-signs");
+      const telPipeUnsupported = document.getElementById("tel-pipe-unsupported");
+      const telPipeCurrentGloss = document.getElementById("tel-pipe-current-gloss");
+      const telPipeFallback = document.getElementById("tel-pipe-fallback");
+      const telPipePlayerState = document.getElementById("tel-pipe-player-state");
+      const telWhisperBackend = document.getElementById("tel-whisper-backend");
+      const telPipeNotice = document.getElementById("tel-pipe-notice");
+
+      // Diagnostic DOM elements
+      const diagThree = document.getElementById("diag-three");
+      const diagGltf = document.getElementById("diag-gltf");
+      const diagRegVer = document.getElementById("diag-reg-ver");
+      const diagPlayerVer = document.getElementById("diag-player-ver");
+      const diagWebglStatus = document.getElementById("diag-webgl-status");
+      const diagWebglRenderer = document.getElementById("diag-webgl-renderer");
+      const diagCanvasSize = document.getElementById("diag-canvas-size");
+      const diagCanvasObscured = document.getElementById("diag-canvas-obscured");
+      const diagGlError = document.getElementById("diag-gl-error");
+      const diagModelStatus = document.getElementById("diag-model-status");
+      const diagMeshesCount = document.getElementById("diag-meshes-count");
+      const diagFrustumCulling = document.getElementById("diag-frustum-culling");
+      const diagWorldBounds = document.getElementById("diag-world-bounds");
+      const diagCameraFraming = document.getElementById("diag-camera-framing");
+      const diagRenderCount = document.getElementById("diag-render-count");
+      const diagRenderLoop = document.getElementById("diag-render-loop");
+      const diagLoadError = document.getElementById("diag-load-error");
+      const diagRenderError = document.getElementById("diag-render-error");
+
+      const PlayerClass = window.SignBridgeAvatarPlayer.AvatarPlayer;
+      const K = window.SignBridgeKeyframeRegistry;
+      const Router = window.SignBridgeTranslationRouter;
+
+      // Diagnostic static checks
+      diagThree.innerHTML = typeof THREE !== 'undefined' ? `<span class="diag-ok">&#10004; Loaded (r128)</span>` : `<span class="diag-err">&#10008; Missing</span>`;
+      diagGltf.innerHTML = (typeof THREE !== 'undefined' && typeof THREE.GLTFLoader !== 'undefined') ? `<span class="diag-ok">&#10004; Loaded</span>` : `<span class="diag-err">&#10008; Missing</span>`;
+      diagRegVer.innerHTML = K && K.VERSION ? `<span class="diag-ok">${K.VERSION}</span>` : `<span class="diag-warn">Legacy / Unversioned</span>`;
+      diagPlayerVer.innerHTML = window.SignBridgeAvatarPlayer && window.SignBridgeAvatarPlayer.VERSION ? `<span class="diag-ok">${window.SignBridgeAvatarPlayer.VERSION}</span>` : `<span class="diag-warn">Legacy / Unversioned</span>`;
+
+      try {
+        player = new PlayerClass(container, {
+          modelUrl: "../assets/models/ybot.glb",
+          width: container.clientWidth || 360,
+          height: 440,
+          onLoad: (p) => {
+            statusOverlay.textContent = "Y-Bot Rig Loaded (67 joints)";
+            telLoaded.textContent = "Loaded (ybot.glb, 2.2MB)";
+            telBones.textContent = `${p.bones.size} / 67 joints`;
+            updateUI();
+            updateDiagnostics();
+          },
+          onError: (err) => {
+            statusOverlay.textContent = "Model Load Failed";
+            telLoaded.textContent = "Error: " + err.message;
+            telLoaded.style.color = "#f87171";
+            diagLoadError.innerHTML = `<span class="diag-err">${err.message}</span>`;
+            updateDiagnostics();
+          },
+          onStateChange: () => {
+            updateUI();
+            updateDiagnostics();
+          }
+        });
+
+        // Expose player globally for Chrome DevTools / test console inspection
+        window.player = player;
+      } catch (err) {
+        statusOverlay.textContent = "Player Init Error: " + err.message;
+        console.error(err);
+        diagLoadError.innerHTML = `<span class="diag-err">${err.message}</span>`;
+      }
+
+      function updateUI() {
+        if (!player) return;
+        const st = player.getStatus();
+
+        // Badge
+        let badgeHtml = '<span class="status-badge badge-neutral">NEUTRAL</span>';
+        if (st.isPlaying) {
+          if (st.currentSignIsFallback) {
+            badgeHtml = '<span class="status-badge badge-paused" style="background:#7c2d12; color:#fed7aa;">&#9632; FALLBACK NEUTRAL</span>';
+          } else {
+            badgeHtml = '<span class="status-badge badge-playing">&#9658; PLAYING</span>';
+          }
+        } else if (st.isPaused) {
+          badgeHtml = '<span class="status-badge badge-paused">&#10074;&#10074; PAUSED</span>';
+        }
+        telState.innerHTML = badgeHtml;
+
+        telClip.textContent = st.currentClipId || st.currentGloss || st.currentPoseId || "Neutral rest pose";
+        timeDisplay.textContent = `${st.currentTimeMs} / ${st.durationMs} ms`;
+        const pct = st.durationMs > 0 ? (st.currentTimeMs / st.durationMs) * 100 : 0;
+        progressFill.style.width = `${pct}%`;
+
+        // Live bone inspection
+        if (player.isLoaded) {
+          const rArm = player.getBoneTransform("RightArm");
+          const rFore = player.getBoneTransform("RightForeArm");
+          const rHand = player.getBoneTransform("RightHand");
+
+          if (rArm && rFore && rHand) {
+            jointTelemetry.innerHTML = `
+              <strong>RightArm:</strong> [X: ${rArm.rotation[0].toFixed(2)}, Y: ${rArm.rotation[1].toFixed(2)}, Z: ${rArm.rotation[2].toFixed(2)}] rad<br>
+              <strong>RightForeArm:</strong> [X: ${rFore.rotation[0].toFixed(2)}, Y: ${rFore.rotation[1].toFixed(2)}, Z: ${rFore.rotation[2].toFixed(2)}] rad<br>
+              <strong>RightHand:</strong> [X: ${rHand.rotation[0].toFixed(2)}, Y: ${rHand.rotation[1].toFixed(2)}, Z: ${rHand.rotation[2].toFixed(2)}] rad
+            `;
+          }
+        }
+
+        // Pipeline telemetry update
+        telPipeCurrentGloss.textContent = st.currentGloss || 'None';
+        if (st.currentSignIsFallback) {
+          telPipeFallback.textContent = 'Active (Held in Neutral Rest Pose — Unknown/Un-animated Gloss)';
+          telPipeFallback.style.color = '#facc15';
+        } else if (st.isPlaying) {
+          telPipeFallback.textContent = 'Inactive (Playing Registered 3D Motion)';
+          telPipeFallback.style.color = '#34d399';
+        } else {
+          telPipeFallback.textContent = 'Idle (Safe Neutral)';
+          telPipeFallback.style.color = '#94a3b8';
+        }
+
+        telPipePlayerState.innerHTML = badgeHtml;
+        telPipeNotice.textContent = st.labelNotice || 'Synthetic technical test — NOT a validated sign';
+      }
+
+      function updateDiagnostics() {
+        if (!player) return;
+        const st = player.getStatus();
+
+        // WebGL diagnostics
+        if (player.renderer) {
+          const gl = player.renderer.getContext();
+          if (gl) {
+            const v = gl.getParameter(gl.VERSION) || "WebGL";
+            const r = gl.getParameter(gl.RENDERER) || "Generic";
+            diagWebglStatus.innerHTML = `<span class="diag-ok">&#10004; Success (${v.split(' ')[0]})</span>`;
+            diagWebglRenderer.textContent = r.length > 32 ? r.substring(0, 32) + '...' : r;
+            const err = gl.getError();
+            diagGlError.innerHTML = err === 0 ? `<span class="diag-ok">0 (NO_ERROR)</span>` : `<span class="diag-err">Error code ${err}</span>`;
+          }
+          const cvs = player.renderer.domElement;
+          if (cvs) {
+            const rect = cvs.getBoundingClientRect();
+            diagCanvasSize.textContent = `${Math.round(rect.width)}x${Math.round(rect.height)} px (buffer ${cvs.width}x${cvs.height})`;
+
+            // Check if canvas is covered or obscured by another DOM element
+            if (rect.width > 0 && rect.height > 0) {
+              const elAtCenter = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+              if (elAtCenter === cvs || elAtCenter === container) {
+                diagCanvasObscured.innerHTML = `<span class="diag-ok">&#10004; No (Canvas is top-most)</span>`;
+              } else if (elAtCenter) {
+                diagCanvasObscured.innerHTML = `<span class="diag-warn">⚠ Covered by &lt;${elAtCenter.tagName.toLowerCase()} id="${elAtCenter.id}"&gt;</span>`;
+              }
+            }
+          }
+        }
+
+        // Model diagnostics
+        if (player.isLoaded && player.model) {
+          diagModelStatus.innerHTML = `<span class="diag-ok">&#10004; Loaded (${player.bones.size} joints)</span>`;
+          let meshCount = 0;
+          let allCulledDisabled = true;
+          player.model.traverse(n => {
+            if (n.isMesh || n.isSkinnedMesh) {
+              meshCount++;
+              if (n.frustumCulled) allCulledDisabled = false;
+            }
+          });
+          diagMeshesCount.innerHTML = `<span class="diag-ok">${meshCount} meshes visible</span>`;
+          diagFrustumCulling.innerHTML = allCulledDisabled
+            ? `<span class="diag-ok">&#10004; Disabled (frustumCulled=false)</span>`
+            : `<span class="diag-err">⚠ Enabled (Risk of culling)</span>`;
+
+          const box = new THREE.Box3().setFromObject(player.model);
+          diagWorldBounds.textContent = `min: [${box.min.x.toFixed(3)}, ${box.min.y.toFixed(3)}, ${box.min.z.toFixed(3)}] max: [${box.max.x.toFixed(3)}, ${box.max.y.toFixed(3)}, ${box.max.z.toFixed(3)}]`;
+        }
+
+        // Camera framing
+        if (player.camera) {
+          diagCameraFraming.textContent = `Pos: [${player.camera.position.x.toFixed(2)}, ${player.camera.position.y.toFixed(2)}, ${player.camera.position.z.toFixed(2)}], FOV: ${player.camera.fov}°`;
+        }
+
+        // Render loop ticks
+        diagRenderCount.textContent = st.renderCount || 0;
+        if (st.lastRenderError) {
+          diagRenderError.innerHTML = `<span class="diag-err">${st.lastRenderError}</span>`;
+        }
+      }
+
+      // Live inspector timer loop (50ms for UI + diagnostics)
+      setInterval(() => {
+        if (player) {
+          if (player.isPlaying) {
+            updateUI();
+          }
+          updateDiagnostics();
+        }
+      }, 100);
+
+      // Speech-to-Sign Pipeline Execution
+      function executeSpeechPipeline(transcript, targetLang) {
+        if (!player) return;
+
+        telPipeTranscript.textContent = `"${transcript}"`;
+        telPipeLang.textContent = targetLang;
+
+        try {
+          const sequence = Router.routeTranscriptTranslation(transcript, targetLang);
+
+          telPipeStatus.innerHTML = '<span class="diag-ok">TRANSLATED</span>';
+          telPipeSeqId.textContent = sequence.sequenceId;
+          telPipeSigns.textContent = `${sequence.signs.length} sign(s) (${sequence.signs.map(s => s.gloss).join(', ') || 'None'})`;
+          telPipeUnsupported.textContent = sequence.unsupportedWords && sequence.unsupportedWords.length > 0
+            ? sequence.unsupportedWords.join(', ')
+            : 'None';
+
+          if (targetLang === 'ASL') {
+            telPipeNotice.textContent = 'ASL pipeline active — ASL lexical assets scheduled for M5 (no English word substitution)';
+          }
+
+          // Pass validated SignSequence directly to the Avatar Player
+          player.playSignSequence(sequence);
+          updateUI();
+        } catch (err) {
+          console.error('[SignBridge] Pipeline error:', err);
+          telPipeStatus.innerHTML = `<span class="diag-err">ERROR: ${err.message}</span>`;
+          telPipeNotice.textContent = err.message;
+        }
+      }
+
+      // Language selector change
+      selectTargetLang.addEventListener("change", () => {
+        const lang = selectTargetLang.value;
+        if (lang === 'ISL') {
+          pipeLangBadge.className = 'badge-isl';
+          pipeLangBadge.textContent = 'TARGET: ISL';
+        } else {
+          pipeLangBadge.className = 'badge-asl';
+          pipeLangBadge.textContent = 'TARGET: ASL (M5 STUB)';
+        }
+      });
+
+      // Pipeline Button Handlers
+      btnTranslatePlay.addEventListener("click", () => {
+        const text = inputTranscript.value;
+        const lang = selectTargetLang.value;
+        executeSpeechPipeline(text, lang);
+      });
+
+      btnInterrupt.addEventListener("click", () => {
+        // Simulates rapid incoming speech interrupting an in-flight sequence
+        executeSpeechPipeline("Hello", selectTargetLang.value);
+        statusOverlay.textContent = "Interrupted with 'Hello'";
+      });
+
+      if (btnSampleNamaste) {
+        btnSampleNamaste.addEventListener("click", () => {
+          inputTranscript.value = "Namaste";
+          executeSpeechPipeline("Namaste", selectTargetLang.value);
+        });
+      }
+
+      btnSampleHello.addEventListener("click", () => {
+        inputTranscript.value = "Hello";
+        executeSpeechPipeline("Hello", selectTargetLang.value);
+      });
+
+      btnSampleThankYou.addEventListener("click", () => {
+        inputTranscript.value = "Thank you";
+        executeSpeechPipeline("Thank you", selectTargetLang.value);
+      });
+
+      btnSampleMixed.addEventListener("click", () => {
+        inputTranscript.value = "Hello world";
+        executeSpeechPipeline("Hello world", selectTargetLang.value);
+      });
+
+      btnSampleMulti.addEventListener("click", () => {
+        inputTranscript.value = "Welcome please";
+        executeSpeechPipeline("Welcome please", selectTargetLang.value);
+      });
+
+      btnSampleUnknown.addEventListener("click", () => {
+        inputTranscript.value = "Computer internet";
+        executeSpeechPipeline("Computer internet", selectTargetLang.value);
+      });
+
+      btnSampleEmpty.addEventListener("click", () => {
+        inputTranscript.value = "";
+        executeSpeechPipeline("", selectTargetLang.value);
+      });
+
+      btnSampleDemoCombo.addEventListener("click", () => {
+        // Combination sequence: Tech motion clip followed by un-animated gloss
+        const C = window.SignBridgeContracts;
+        const comboSequence = C.createSignSequence({
+          sequenceId: 'seq-combo-demo-' + Date.now(),
+          language: 'ISL',
+          rawTranscript: 'Tech Motion + Hello',
+          sourceChunkSeq: 0,
+          startMediaTimeMs: 0,
+          endMediaTimeMs: 3000,
+          signs: [
+            C.createSignItem({
+              gloss: 'TECHNICAL_TEST_MOTION',
+              category: 'lexical',
+              durationMs: 2000,
+              source: 'seed_dictionary',
+              animationId: 'tech_test_motion_v1'
+            }),
+            C.createSignItem({
+              gloss: 'HELLO',
+              category: 'lexical',
+              durationMs: 1000,
+              source: 'seed_dictionary'
+            })
+          ],
+          fingerspellingApplied: false,
+          grammarApplied: false,
+          unsupportedWords: ['demo_word']
+        });
+        inputTranscript.value = "Tech Motion + Hello";
+        telPipeTranscript.textContent = '"Tech Motion + Hello (Deterministic Combo)"';
+        telPipeLang.textContent = 'ISL';
+        telPipeStatus.innerHTML = '<span class="diag-ok">COMBO TEST SEQUENCE</span>';
+        telPipeSeqId.textContent = comboSequence.sequenceId;
+        telPipeSigns.textContent = '2 signs (TECHNICAL_TEST_MOTION [Clip], HELLO [Neutral Fallback])';
+        telPipeUnsupported.textContent = 'demo_word';
+        player.playSignSequence(comboSequence);
+        updateUI();
+      });
+
+      // Check Whisper local backend
+      btnCheckBackend.addEventListener("click", async () => {
+        telWhisperBackend.textContent = 'Polling http://127.0.0.1:8765/health...';
+        telWhisperBackend.style.color = '#38bdf8';
+        try {
+          const resp = await fetch('http://127.0.0.1:8765/health', { method: 'GET', mode: 'cors' });
+          if (resp.ok) {
+            const data = await resp.json();
+            telWhisperBackend.innerHTML = `<span class="diag-ok">&#10004; Online (fastapi ${data.status || 'ok'})</span>`;
+          } else {
+            telWhisperBackend.innerHTML = `<span class="diag-warn">HTTP ${resp.status} (Backend returned error status)</span>`;
+          }
+        } catch (e) {
+          telWhisperBackend.innerHTML = `<span class="diag-warn">Offline / Inactive (${e.message}) — Local integration tests run deterministically</span>`;
+        }
+      });
+
+      // Standard Viewport Button Handlers
+      btnPlay.addEventListener("click", () => {
+        player.playClip(K.TECHNICAL_TEST_CLIP);
+        updateUI();
+      });
+
+      btnPause.addEventListener("click", () => {
+        player.pause();
+        updateUI();
+      });
+
+      btnResume.addEventListener("click", () => {
+        player.resume();
+        updateUI();
+      });
+
+      btnRestart.addEventListener("click", () => {
+        player.restart();
+        updateUI();
+      });
+
+      btnNeutral.addEventListener("click", () => {
+        player.resetToNeutralPose();
+        updateUI();
+      });
+
+      btnMissing.addEventListener("click", () => {
+        // Intentionally passes null to test safe fallback
+        const res = player.playClip(null);
+        statusOverlay.textContent = "Tested null clip -> Fallback to Neutral";
+        updateUI();
+      });
+
+      btnUnreg.addEventListener("click", () => {
+        // Tests dictionary gloss 'HELLO' which has no registered 3D clip
+        const res = player.playSignItem({ gloss: "HELLO", category: "lexical", durationMs: 750, source: "seed_dictionary" });
+        statusOverlay.textContent = "Unregistered sign -> Safe Neutral Fallback";
+        updateUI();
+      });
+
+      // -----------------------------------------------------------------------
+      // Milestone M4: Live Tab Audio & Extension Bridge Implementation
+      // -----------------------------------------------------------------------
+      let activeSessionId = null;
+      let lastProcessedSeqId = 0;
+
+      const bridgeStatusBadge = document.getElementById("bridge-status-badge");
+      const bridgeSessionId = document.getElementById("bridge-session-id");
+      const bridgeLiveTranscript = document.getElementById("bridge-live-transcript");
+      const bridgeConfidence = document.getElementById("bridge-confidence");
+      const bridgeChunkSeq = document.getElementById("bridge-chunk-seq");
+      const bridgeRoutingStatus = document.getElementById("bridge-routing-status");
+
+      function handleLiveTranscriptDispatch(payload) {
+        if (!payload || payload.version !== "1.0.0") return;
+
+        // Session recovery / verification
+        if (!activeSessionId) {
+          activeSessionId = payload.sessionId;
+          lastProcessedSeqId = 0;
+        } else if (payload.sessionId && payload.sessionId !== activeSessionId) {
+          console.warn(`[SignBridge Avatar Bridge] Received transcript from mismatched session '${payload.sessionId}' (active: '${activeSessionId}'). Dropping.`);
+          return;
+        }
+
+        // Monotonic sequence check (Strict De-duplication and Order Enforcement)
+        if (typeof payload.sequenceId === "number") {
+          if (payload.sequenceId <= lastProcessedSeqId) {
+            console.warn(`[SignBridge Avatar Bridge] Dropping duplicate or out-of-order chunk #${payload.sequenceId} (last processed: #${lastProcessedSeqId})`);
+            return;
+          }
+          lastProcessedSeqId = payload.sequenceId;
+        }
+
+        // Update Bridge Telemetry UI
+        if (bridgeStatusBadge) {
+          bridgeStatusBadge.className = "badge-isl";
+          bridgeStatusBadge.style.background = "#065f46";
+          bridgeStatusBadge.style.color = "#6ee7b7";
+          bridgeStatusBadge.textContent = "CAPTURE: ACTIVE";
+        }
+        if (bridgeSessionId) {
+          bridgeSessionId.textContent = payload.sessionId || "Active Session";
+        }
+        if (bridgeChunkSeq) {
+          const timeSec = payload.timestamp ? payload.timestamp.toFixed(1) : "0.0";
+          const durSec = payload.duration ? payload.duration.toFixed(1) : "2.0";
+          bridgeChunkSeq.textContent = `#${payload.sequenceId} (${timeSec}s, ${durSec}s slice)`;
+        }
+
+        const rawText = (payload.text || "").trim();
+        if (bridgeLiveTranscript) {
+          bridgeLiveTranscript.textContent = rawText ? `"${rawText}"` : "[Silence / No Speech Detected]";
+        }
+
+        // Confidence reporting: ONLY if backend provides a valid confidence value
+        if (bridgeConfidence) {
+          if (typeof payload.confidence === "number" && !isNaN(payload.confidence)) {
+            const pct = Math.round(payload.confidence * 100);
+            if (payload.confidence < 0.60) {
+              bridgeConfidence.style.color = "#f87171";
+              bridgeConfidence.textContent = `${pct}% (Low ASR Confidence)`;
+            } else {
+              bridgeConfidence.style.color = "#34d399";
+              bridgeConfidence.textContent = `${pct}%`;
+            }
+          } else {
+            bridgeConfidence.textContent = "--";
+            bridgeConfidence.style.color = "#94a3b8";
+          }
+        }
+
+        // Silence / Empty Audio Handling: Do NOT animate; maintain neutral pose
+        if (!rawText) {
+          if (bridgeRoutingStatus) {
+            bridgeRoutingStatus.textContent = "Silence detected — Holding neutral rest pose (zero gestures)";
+            bridgeRoutingStatus.style.color = "#94a3b8";
+          }
+          if (player) {
+            player.resetToNeutralPose();
+            updateUI();
+          }
+          return;
+        }
+
+        // Update manual input box to reflect live transcript
+        inputTranscript.value = rawText;
+
+        // Execute Speech-to-Sign Pipeline
+        const targetLang = selectTargetLang ? selectTargetLang.value : "ISL";
+        executeSpeechPipeline(rawText, targetLang);
+
+        // Update Bridge Routing Status based on sequence outcome
+        if (bridgeRoutingStatus && player && player.activeSequence) {
+          const signs = player.activeSequence.signs || [];
+          const unsupported = player.activeSequence.unsupportedWords || [];
+
+          if (signs.length > 0) {
+            const hasNamaste = signs.some(s => s.gloss === "NAMASTE");
+            if (hasNamaste) {
+              bridgeRoutingStatus.textContent = "✔ Articulating ISL Namaste (ISLRTC GODL v1.0 Baseline)";
+              bridgeRoutingStatus.style.color = "#34d399";
+            } else {
+              bridgeRoutingStatus.textContent = "⚠ Words in dictionary, 3D animation awaiting qualified review — neutral pose held";
+              bridgeRoutingStatus.style.color = "#facc15";
+            }
+          } else if (unsupported.length > 0) {
+            bridgeRoutingStatus.textContent = `⚠ Out-of-lexicon words: [${unsupported.join(", ")}] — Neutral pose held (PRD: Zero synthetic gestures)`;
+            bridgeRoutingStatus.style.color = "#fca5a5";
+          }
+        }
+      }
+
+      function handleCaptureStopped(payload) {
+        activeSessionId = null;
+        lastProcessedSeqId = 0;
+        if (bridgeStatusBadge) {
+          bridgeStatusBadge.className = "badge-isl";
+          bridgeStatusBadge.style.background = "#1e293b";
+          bridgeStatusBadge.style.color = "#94a3b8";
+          bridgeStatusBadge.textContent = "CAPTURE: IDLE";
+        }
+        if (bridgeRoutingStatus) {
+          bridgeRoutingStatus.textContent = "Capture session stopped — Avatar at neutral rest pose";
+          bridgeRoutingStatus.style.color = "#94a3b8";
+        }
+        if (player) {
+          player.resetToNeutralPose();
+          updateUI();
+        }
+      }
+
+      function handleCaptureStarted(payload) {
+        activeSessionId = payload.sessionId || null;
+        lastProcessedSeqId = 0;
+        if (bridgeStatusBadge) {
+          bridgeStatusBadge.className = "badge-isl";
+          bridgeStatusBadge.style.background = "#065f46";
+          bridgeStatusBadge.style.color = "#6ee7b7";
+          bridgeStatusBadge.textContent = "CAPTURE: ACTIVE";
+        }
+        if (bridgeSessionId) {
+          bridgeSessionId.textContent = activeSessionId || "Active";
+        }
+        if (bridgeRoutingStatus) {
+          bridgeRoutingStatus.textContent = "Audio capture active in tab — Listening for speech...";
+          bridgeRoutingStatus.style.color = "#38bdf8";
+        }
+        if (player) {
+          player.resetToNeutralPose();
+          updateUI();
+        }
+      }
+
+      function initExtensionBridge() {
+        if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.onMessage) {
+          console.info("[SignBridge Avatar Bridge] Chrome runtime unavailable (running in standalone browser mode).");
+          return;
+        }
+
+        // Listen for runtime broadcasts from service worker
+        chrome.runtime.onMessage.addListener((message) => {
+          if (!message || !message.type) return;
+
+          if (message.type === "SIGNBRIDGE_TRANSCRIPTION_DISPATCH") {
+            handleLiveTranscriptDispatch(message);
+          } else if (message.type === "SIGNBRIDGE_CAPTURE_STOPPED") {
+            handleCaptureStopped(message);
+          } else if (message.type === "SIGNBRIDGE_CAPTURE_STARTED") {
+            handleCaptureStarted(message);
+          }
+        });
+
+        // Listen for session storage changes
+        if (chrome.storage && chrome.storage.session) {
+          chrome.storage.session.onChanged.addListener((changes) => {
+            if (changes.captureState && changes.captureState.newValue) {
+              const state = changes.captureState.newValue;
+              if (state.status === "idle" && activeSessionId) {
+                handleCaptureStopped({ reason: "Session state transitioned to idle" });
+              }
+            }
+          });
+
+          // Recover initial state in case player was opened while capture is ALREADY running
+          chrome.storage.session.get("captureState").then((data) => {
+            const state = data ? data.captureState : null;
+            if (state && state.status === "capturing") {
+              console.info("[SignBridge Avatar Bridge] Connecting to running capture session:", state.sessionId);
+              activeSessionId = state.sessionId;
+              lastProcessedSeqId = state.lastProcessedSequenceId || 0;
+              if (bridgeStatusBadge) {
+                bridgeStatusBadge.className = "badge-isl";
+                bridgeStatusBadge.style.background = "#065f46";
+                bridgeStatusBadge.style.color = "#6ee7b7";
+                bridgeStatusBadge.textContent = "CAPTURE: ACTIVE";
+              }
+              if (bridgeSessionId) {
+                bridgeSessionId.textContent = activeSessionId;
+              }
+              if (bridgeLiveTranscript && state.latestTranscript) {
+                bridgeLiveTranscript.textContent = `"${state.latestTranscript}"`;
+              }
+              if (bridgeRoutingStatus) {
+                bridgeRoutingStatus.textContent = "Connected to running tab capture — Awaiting next speech chunk";
+                bridgeRoutingStatus.style.color = "#38bdf8";
+              }
+            }
+          }).catch(() => {});
+        }
+      }
+
+      // Initialize Extension Bridge
+      initExtensionBridge();
+
+      // Fallback bridge for Web-Origin Test Viewers (e.g. http://localhost:8080)
+      async function pollLocalBackendTranscript() {
+        if (typeof chrome !== 'undefined' && chrome.storage) return; // Use native extension bridge if available
+        try {
+          const res = await fetch("http://127.0.0.1:8765/api/transcript/latest");
+          if (res.status === 200) {
+            const data = await res.json();
+            if (data && data.text && typeof data.sequence_id === "number") {
+              handleLiveTranscriptDispatch({
+                version: "1.0.0",
+                type: "SIGNBRIDGE_TRANSCRIPTION_DISPATCH",
+                sessionId: "web_poll_session",
+                sequenceId: data.sequence_id,
+                timestamp: data.timestamp || 0,
+                duration: data.duration || 2.0,
+                text: data.text,
+                confidence: data.confidence || null,
+                metrics: data.metrics || {}
+              });
+            }
+          }
+        } catch (_) {
+          // Backend offline or waiting for audio
+        }
+      }
+      setInterval(pollLocalBackendTranscript, 500);
+    });
+  </script>
+</body>
+</html>
