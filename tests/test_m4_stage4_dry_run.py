@@ -61,17 +61,17 @@ class TestM4Stage4DryRunWorkflows(unittest.TestCase):
 
     def test_04_silence_and_empty_transcription(self):
         """Scenario 4: Verifies silence returns empty string and avatar holds neutral rest pose without motion."""
-        avatar_html = (ROOT / 'extension' / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        avatar_js = (ROOT / 'extension' / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
         
-        self.assertIn("Silence detected — Holding neutral rest pose (zero gestures)", avatar_html)
-        self.assertIn("player.resetToNeutralPose()", avatar_html)
+        self.assertIn("Silence detected — Holding neutral rest pose (zero gestures)", avatar_js)
+        self.assertIn("player.resetToNeutralPose()", avatar_js)
 
     def test_05_low_confidence_transcription(self):
         """Scenario 5: Verifies low-confidence speech (<0.60) renders warning badge to alert user."""
-        avatar_html = (ROOT / 'extension' / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        avatar_js = (ROOT / 'extension' / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
         
-        self.assertIn("0.60", avatar_html)
-        self.assertIn("Low ASR Confidence", avatar_html)
+        self.assertIn("0.60", avatar_js)
+        self.assertIn("Low ASR Confidence", avatar_js)
 
     def test_06_supported_namaste_routing(self):
         """Scenario 6: Verifies 'namaste' resolves to production baseline isl_namaste_godl_v1."""
@@ -84,25 +84,25 @@ class TestM4Stage4DryRunWorkflows(unittest.TestCase):
     def test_07_unanimated_dictionary_entries(self):
         """Scenario 7: Verifies dictionary words lacking 3D animation (e.g. THANK_YOU) hold neutral pose with notice."""
         trans_js = (ROOT / 'extension' / 'translation' / 'isl_translator.js').read_text(encoding='utf-8')
-        avatar_html = (ROOT / 'extension' / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        avatar_js = (ROOT / 'extension' / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
         
         self.assertIn("THANK_YOU:", trans_js)
         self.assertIn("animationId: null", trans_js)
-        self.assertIn("3D animation awaiting qualified review — neutral pose held", avatar_html)
+        self.assertIn("3D animation awaiting qualified review — neutral pose held", avatar_js)
 
     def test_08_unknown_and_out_of_lexicon_phrases(self):
         """Scenario 8: Verifies out-of-lexicon phrases surface in unsupportedWords and avatar maintains rest pose."""
-        avatar_html = (ROOT / 'extension' / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        avatar_js = (ROOT / 'extension' / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
         
-        self.assertIn("Out-of-lexicon words", avatar_html)
-        self.assertIn("PRD: Zero synthetic gestures", avatar_html)
+        self.assertIn("Out-of-lexicon words", avatar_js)
+        self.assertIn("PRD: Zero synthetic gestures", avatar_js)
 
     def test_09_duplicate_stale_out_of_order_events(self):
         """Scenario 9: Verifies monotonic sequence ID check drops duplicate or stale transcripts."""
-        avatar_html = (ROOT / 'extension' / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        avatar_js = (ROOT / 'extension' / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
         
-        self.assertIn("lastProcessedSeqId", avatar_html)
-        self.assertIn("payload.sequenceId <= lastProcessedSeqId", avatar_html)
+        self.assertIn("lastProcessedSeqId", avatar_js)
+        self.assertIn("payload.sequenceId <= lastProcessedSeqId", avatar_js)
 
     def test_10_queue_saturation_and_bounded_history(self):
         """Scenario 10: Verifies queue capped at MAX_QUEUE_SIZE=3 and transcript history capped at 30 items."""
@@ -114,10 +114,10 @@ class TestM4Stage4DryRunWorkflows(unittest.TestCase):
 
     def test_11_avatar_window_reconnect_state(self):
         """Scenario 11: Verifies avatar player queries session storage on load to reconnect to running sessions."""
-        avatar_html = (ROOT / 'extension' / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        avatar_js = (ROOT / 'extension' / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
         
-        self.assertIn("chrome.storage.session.get(\"captureState\")", avatar_html)
-        self.assertIn("Connecting to running capture session", avatar_html)
+        self.assertIn("chrome.storage.session.get(\"captureState\")", avatar_js)
+        self.assertIn("Connecting to running capture session", avatar_js)
 
     def test_12_tab_closure_and_track_teardown(self):
         """Scenario 12: Verifies tab closure triggers audioTrack.onended and initiates clean session shutdown."""

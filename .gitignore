@@ -35,6 +35,7 @@ tools/isl_motion_extraction/models/*.task
 tools/isl_motion_extraction/models/*.onnx
 tools/isl_motion_extraction/models/*.tflite
 models/
+!extension/models/
 *.bin
 *.pt
 *.safetensors

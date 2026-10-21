@@ -1,0 +1,610 @@
+{
+  "auditVersion": "1.0.0",
+  "milestone": "SignBridge M8 \u2014 Sign Coverage & Translation Reliability",
+  "generatedAt": "2026-10-21T17:15:00Z",
+  "summary": {
+    "totalDictionaryGlosses": 16,
+    "totalUniqueLemmas": 50,
+    "glossesWithAnimationId": 1,
+    "glossesWithNullAnimationId": 15,
+    "realLoadableAnimationAssetsCount": 2,
+    "technicallyPlayableClipsCount": 3,
+    "linguisticallyApprovedSignsCount": 0,
+    "completedDeafNativeReviews": 0,
+    "benchmarkSentencesAudited": 8,
+    "uniqueUnsupportedTokensInBenchmarks": 25
+  },
+  "inventory": {
+    "dictionaryEntries": {
+      "NAMASTE": {
+        "gloss": "NAMASTE",
+        "animationId": "isl_namaste_godl_v1",
+        "defaultDurationMs": 1800,
+        "lemmas": [
+          "namaste",
+          "namaskar",
+          "namaskaram"
+        ],
+        "description": "Two-handed greeting: palms pressed flat together at center chest (Anjali Mudra), slight respectful head bow (ISLRTC Vol 1, Word #0001, GODL License)"
+      },
+      "HELLO": {
+        "gloss": "HELLO",
+        "animationId": null,
+        "defaultDurationMs": 700,
+        "lemmas": [
+          "hello",
+          "hi",
+          "hey",
+          "greetings"
+        ],
+        "description": "Open flat hand raised to temple/chest, gentle outward forward arc"
+      },
+      "THANK_YOU": {
+        "gloss": "THANK_YOU",
+        "animationId": null,
+        "defaultDurationMs": 800,
+        "lemmas": [
+          "thank you",
+          "thanks",
+          "thank"
+        ],
+        "description": "Flat dominant hand touching chin/lips, moving downward and forward"
+      },
+      "PLEASE": {
+        "gloss": "PLEASE",
+        "animationId": null,
+        "defaultDurationMs": 700,
+        "lemmas": [
+          "please"
+        ],
+        "description": "Flat open hand rubbing clockwise over center of chest"
+      },
+      "WELCOME": {
+        "gloss": "WELCOME",
+        "animationId": null,
+        "defaultDurationMs": 750,
+        "lemmas": [
+          "welcome"
+        ],
+        "description": "Both open hands held forward palms up, drawn smoothly toward body"
+      },
+      "SORRY": {
+        "gloss": "SORRY",
+        "animationId": null,
+        "defaultDurationMs": 700,
+        "lemmas": [
+          "sorry",
+          "apologize",
+          "apology"
+        ],
+        "description": "Closed dominant fist rubbing circular on chest"
+      },
+      "YES": {
+        "gloss": "YES",
+        "animationId": null,
+        "defaultDurationMs": 600,
+        "lemmas": [
+          "yes",
+          "yeah",
+          "yep",
+          "correct",
+          "agree"
+        ],
+        "description": "Dominant fist nodding downward at wrist"
+      },
+      "NO": {
+        "gloss": "NO",
+        "animationId": null,
+        "defaultDurationMs": 600,
+        "lemmas": [
+          "no",
+          "not",
+          "never",
+          "nope"
+        ],
+        "description": "Dominant index finger wagging side-to-side"
+      },
+      "NAME": {
+        "gloss": "NAME",
+        "animationId": null,
+        "defaultDurationMs": 700,
+        "lemmas": [
+          "name",
+          "named",
+          "called"
+        ],
+        "description": "Dominant H-hand tapping non-dominant H-hand"
+      },
+      "YOU": {
+        "gloss": "YOU",
+        "animationId": null,
+        "defaultDurationMs": 500,
+        "lemmas": [
+          "you",
+          "your",
+          "yours"
+        ],
+        "description": "Dominant index finger pointing forward toward addressee"
+      },
+      "I": {
+        "gloss": "I",
+        "animationId": null,
+        "defaultDurationMs": 500,
+        "lemmas": [
+          "i",
+          "me",
+          "my",
+          "mine",
+          "myself"
+        ],
+        "description": "Dominant index finger pointing toward center of signer chest"
+      },
+      "HELP": {
+        "gloss": "HELP",
+        "animationId": null,
+        "defaultDurationMs": 750,
+        "lemmas": [
+          "help",
+          "assist",
+          "assistance"
+        ],
+        "description": "Closed dominant fist resting on open flat non-dominant palm"
+      },
+      "GOOD": {
+        "gloss": "GOOD",
+        "animationId": null,
+        "defaultDurationMs": 600,
+        "lemmas": [
+          "good",
+          "fine",
+          "well",
+          "great"
+        ],
+        "description": "Dominant thumb-up fist moving forward"
+      },
+      "BAD": {
+        "gloss": "BAD",
+        "animationId": null,
+        "defaultDurationMs": 600,
+        "lemmas": [
+          "bad",
+          "poor",
+          "wrong"
+        ],
+        "description": "Dominant pinky extended or hand turned palm down with downward thrust"
+      },
+      "STOP": {
+        "gloss": "STOP",
+        "animationId": null,
+        "defaultDurationMs": 600,
+        "lemmas": [
+          "stop",
+          "halt",
+          "cease"
+        ],
+        "description": "Open flat dominant hand coming down sharply onto open non-dominant palm"
+      },
+      "WAIT": {
+        "gloss": "WAIT",
+        "animationId": null,
+        "defaultDurationMs": 700,
+        "lemmas": [
+          "wait",
+          "hold"
+        ],
+        "description": "Open hands held outward at waist height, fingers fluttering"
+      }
+    },
+    "registeredClips": {
+      "tech_test_motion_v1": {
+        "animationId": "tech_test_motion_v1",
+        "gloss": "TECH_TEST_MOTION",
+        "durationMs": 2000,
+        "isLinguisticISL": false,
+        "validationStatus": "synthetic_test_non_linguistic",
+        "type": "synthetic_technical_prototype",
+        "activeProductionRoute": false
+      },
+      "isl_namaste_godl_v1": {
+        "animationId": "isl_namaste_godl_v1",
+        "gloss": "NAMASTE",
+        "durationMs": 1800,
+        "isLinguisticISL": true,
+        "validationStatus": "experimental_awaiting_validation",
+        "provenance": "Hand-authored geometric approximation based on ISLRTC Vol 1, Word #0001 (data.gov.in / GODL)",
+        "type": "production_baseline",
+        "activeProductionRoute": true
+      }
+    },
+    "candidateAssets": {
+      "isl_namaste_mocap_candidate_v1": {
+        "animationId": "isl_namaste_mocap_candidate_v1",
+        "file": "isl_namaste_mocap_candidate_v1.json",
+        "sha256": "6f24e60f7f55d71482133790ca60f6a52682a38f7f6b32c8921480586cef4a46",
+        "durationMs": 3080,
+        "isLinguisticISL": true,
+        "validationStatus": "experimental_awaiting_validation",
+        "quarantined": true,
+        "activeProductionRoute": false
+      }
+    },
+    "reviews": []
+  },
+  "coverageClassification": {
+    "HUMAN_VALIDATED": [],
+    "IMPLEMENTED_UNVALIDATED": [
+      "NAMASTE"
+    ],
+    "UNANIMATED_SUPPORTED_ENTRY": [
+      "HELLO",
+      "THANK_YOU",
+      "PLEASE",
+      "WELCOME",
+      "SORRY",
+      "YES",
+      "NO",
+      "NAME",
+      "YOU",
+      "I",
+      "HELP",
+      "GOOD",
+      "BAD",
+      "STOP",
+      "WAIT"
+    ],
+    "EXPERIMENTAL_QUARANTINED": [
+      "isl_namaste_mocap_candidate_v1",
+      "tech_test_motion_v1"
+    ]
+  },
+  "technicallyPlayableAwaitingReview": [
+    {
+      "id": "isl_namaste_godl_v1",
+      "gloss": "NAMASTE",
+      "playable": true,
+      "linguisticApprovalStatus": "AWAITING_REVIEW (0/3 reviews completed)",
+      "reason": "Articulates bilateral prayer pose and head nod on Y-Bot WebGL canvas; clean-room authored under GODL; awaiting certified Deaf-native human panel validation."
+    },
+    {
+      "id": "isl_namaste_mocap_candidate_v1",
+      "gloss": "NAMASTE",
+      "playable": true,
+      "linguisticApprovalStatus": "QUARANTINED (0/3 reviews completed)",
+      "reason": "Evaluated in M3.9/M3.10 retargeting tests; passes declarative schema validation; isolated from production registry."
+    },
+    {
+      "id": "tech_test_motion_v1",
+      "gloss": "TECH_TEST_MOTION",
+      "playable": true,
+      "linguisticApprovalStatus": "NON_LINGUISTIC_SYNTHETIC",
+      "reason": "Rig verification motion; explicitly flagged isLinguisticISL=false."
+    }
+  ],
+  "missingOrInconsistentAnimationReferences": [
+    {
+      "gloss": "HELLO",
+      "issue": "Dictionary match exists but animationId is null; no 3D asset linked.",
+      "risk": "Risk of naive code or UI conflating dictionary lookup with playable animation.",
+      "mitigation": "SignBridge M8 strict separation: player holds neutral rest pose and reports '0 playable clips (dictionary match awaiting review)'."
+    },
+    {
+      "gloss": "THANK_YOU",
+      "issue": "Dictionary match exists but animationId is null; no 3D asset linked.",
+      "risk": "Risk of naive code or UI conflating dictionary lookup with playable animation.",
+      "mitigation": "SignBridge M8 strict separation: player holds neutral rest pose and reports '0 playable clips (dictionary match awaiting review)'."
+    },
+    {
+      "gloss": "PLEASE",
+      "issue": "Dictionary match exists but animationId is null; no 3D asset linked.",
+      "risk": "Risk of naive code or UI conflating dictionary lookup with playable animation.",
+      "mitigation": "SignBridge M8 strict separation: player holds neutral rest pose and reports '0 playable clips (dictionary match awaiting review)'."
+    },
+    {
+      "gloss": "WELCOME",
+      "issue": "Dictionary match exists but animationId is null; no 3D asset linked.",
+      "risk": "Risk of naive code or UI conflating dictionary lookup with playable animation.",
+      "mitigation": "SignBridge M8 strict separation: player holds neutral rest pose and reports '0 playable clips (dictionary match awaiting review)'."
+    },
+    {
+      "gloss": "SORRY",
+      "issue": "Dictionary match exists but animationId is null; no 3D asset linked.",
+      "risk": "Risk of naive code or UI conflating dictionary lookup with playable animation.",
+      "mitigation": "SignBridge M8 strict separation: player holds neutral rest pose and reports '0 playable clips (dictionary match awaiting review)'."
+    },
+    {
+      "gloss": "YES",
+      "issue": "Dictionary match exists but animationId is null; no 3D asset linked.",
+      "risk": "Risk of naive code or UI conflating dictionary lookup with playable animation.",
+      "mitigation": "SignBridge M8 strict separation: player holds neutral rest pose and reports '0 playable clips (dictionary match awaiting review)'."
+    },
+    {
+      "gloss": "NO",
+      "issue": "Dictionary match exists but animationId is null; no 3D asset linked.",
+      "risk": "Risk of naive code or UI conflating dictionary lookup with playable animation.",
+      "mitigation": "SignBridge M8 strict separation: player holds neutral rest pose and reports '0 playable clips (dictionary match awaiting review)'."
+    },
+    {
+      "gloss": "NAME",
+      "issue": "Dictionary match exists but animationId is null; no 3D asset linked.",
+      "risk": "Risk of naive code or UI conflating dictionary lookup with playable animation.",
+      "mitigation": "SignBridge M8 strict separation: player holds neutral rest pose and reports '0 playable clips (dictionary match awaiting review)'."
+    },
+    {
+      "gloss": "YOU",
+      "issue": "Dictionary match exists but animationId is null; no 3D asset linked.",
+      "risk": "Risk of naive code or UI conflating dictionary lookup with playable animation.",
+      "mitigation": "SignBridge M8 strict separation: player holds neutral rest pose and reports '0 playable clips (dictionary match awaiting review)'."
+    },
+    {
+      "gloss": "I",
+      "issue": "Dictionary match exists but animationId is null; no 3D asset linked.",
+      "risk": "Risk of naive code or UI conflating dictionary lookup with playable animation.",
+      "mitigation": "SignBridge M8 strict separation: player holds neutral rest pose and reports '0 playable clips (dictionary match awaiting review)'."
+    },
+    {
+      "gloss": "HELP",
+      "issue": "Dictionary match exists but animationId is null; no 3D asset linked.",
+      "risk": "Risk of naive code or UI conflating dictionary lookup with playable animation.",
+      "mitigation": "SignBridge M8 strict separation: player holds neutral rest pose and reports '0 playable clips (dictionary match awaiting review)'."
+    },
+    {
+      "gloss": "GOOD",
+      "issue": "Dictionary match exists but animationId is null; no 3D asset linked.",
+      "risk": "Risk of naive code or UI conflating dictionary lookup with playable animation.",
+      "mitigation": "SignBridge M8 strict separation: player holds neutral rest pose and reports '0 playable clips (dictionary match awaiting review)'."
+    },
+    {
+      "gloss": "BAD",
+      "issue": "Dictionary match exists but animationId is null; no 3D asset linked.",
+      "risk": "Risk of naive code or UI conflating dictionary lookup with playable animation.",
+      "mitigation": "SignBridge M8 strict separation: player holds neutral rest pose and reports '0 playable clips (dictionary match awaiting review)'."
+    },
+    {
+      "gloss": "STOP",
+      "issue": "Dictionary match exists but animationId is null; no 3D asset linked.",
+      "risk": "Risk of naive code or UI conflating dictionary lookup with playable animation.",
+      "mitigation": "SignBridge M8 strict separation: player holds neutral rest pose and reports '0 playable clips (dictionary match awaiting review)'."
+    },
+    {
+      "gloss": "WAIT",
+      "issue": "Dictionary match exists but animationId is null; no 3D asset linked.",
+      "risk": "Risk of naive code or UI conflating dictionary lookup with playable animation.",
+      "mitigation": "SignBridge M8 strict separation: player holds neutral rest pose and reports '0 playable clips (dictionary match awaiting review)'."
+    }
+  ],
+  "benchmarkAnalysis": [
+    {
+      "id": "BM-01",
+      "source": "signbridge-backend/test_speech_sample.wav (Deterministic Fixture)",
+      "transcript": "Hello world, this is signbridge local speech recognition test.",
+      "tokens": [
+        "hello",
+        "world",
+        "this",
+        "is",
+        "signbridge",
+        "local",
+        "speech",
+        "recognition",
+        "test"
+      ],
+      "matchedSignsCount": 1,
+      "playableClipsCount": 0,
+      "playableGlosses": [],
+      "dictionaryOnlyMatchesCount": 1,
+      "dictionaryOnlyGlosses": [
+        "HELLO"
+      ],
+      "unsupportedWords": [
+        "world",
+        "this",
+        "is",
+        "signbridge",
+        "local",
+        "speech",
+        "recognition",
+        "test"
+      ],
+      "status": "PARTIAL / UNSUPPORTED"
+    },
+    {
+      "id": "BM-02",
+      "source": "Live Speech Routing Regression (Scenario 8 / Issue A)",
+      "transcript": "She makes me very, very proud.",
+      "tokens": [
+        "she",
+        "makes",
+        "me",
+        "very",
+        "very",
+        "proud"
+      ],
+      "matchedSignsCount": 1,
+      "playableClipsCount": 0,
+      "playableGlosses": [],
+      "dictionaryOnlyMatchesCount": 1,
+      "dictionaryOnlyGlosses": [
+        "I"
+      ],
+      "unsupportedWords": [
+        "she",
+        "makes",
+        "very",
+        "very",
+        "proud"
+      ],
+      "status": "PARTIAL / UNSUPPORTED"
+    },
+    {
+      "id": "BM-03",
+      "source": "Browser Bridge E2E & Dry-Run Simulator (Scenario 8)",
+      "transcript": "quantum computing rocket",
+      "tokens": [
+        "quantum",
+        "computing",
+        "rocket"
+      ],
+      "matchedSignsCount": 0,
+      "playableClipsCount": 0,
+      "playableGlosses": [],
+      "dictionaryOnlyMatchesCount": 0,
+      "dictionaryOnlyGlosses": [],
+      "unsupportedWords": [
+        "quantum",
+        "computing",
+        "rocket"
+      ],
+      "status": "UNSUPPORTED"
+    },
+    {
+      "id": "BM-04",
+      "source": "Live Speech Routing Regression (Scenario 3)",
+      "transcript": "superconducting tokamak reactor",
+      "tokens": [
+        "superconducting",
+        "tokamak",
+        "reactor"
+      ],
+      "matchedSignsCount": 0,
+      "playableClipsCount": 0,
+      "playableGlosses": [],
+      "dictionaryOnlyMatchesCount": 0,
+      "dictionaryOnlyGlosses": [],
+      "unsupportedWords": [
+        "superconducting",
+        "tokamak",
+        "reactor"
+      ],
+      "status": "UNSUPPORTED"
+    },
+    {
+      "id": "BM-05",
+      "source": "Standard Everyday Conversation Test Query 1",
+      "transcript": "What is your name?",
+      "tokens": [
+        "what",
+        "is",
+        "your",
+        "name"
+      ],
+      "matchedSignsCount": 2,
+      "playableClipsCount": 0,
+      "playableGlosses": [],
+      "dictionaryOnlyMatchesCount": 2,
+      "dictionaryOnlyGlosses": [
+        "YOU",
+        "NAME"
+      ],
+      "unsupportedWords": [
+        "what",
+        "is"
+      ],
+      "status": "PARTIAL / UNSUPPORTED"
+    },
+    {
+      "id": "BM-06",
+      "source": "Standard Everyday Conversation Test Query 2",
+      "transcript": "Good morning, please help me.",
+      "tokens": [
+        "good",
+        "morning",
+        "please",
+        "help",
+        "me"
+      ],
+      "matchedSignsCount": 4,
+      "playableClipsCount": 0,
+      "playableGlosses": [],
+      "dictionaryOnlyMatchesCount": 4,
+      "dictionaryOnlyGlosses": [
+        "GOOD",
+        "PLEASE",
+        "HELP",
+        "I"
+      ],
+      "unsupportedWords": [
+        "morning"
+      ],
+      "status": "PARTIAL / UNSUPPORTED"
+    },
+    {
+      "id": "BM-07",
+      "source": "Standard Everyday Conversation Test Query 3",
+      "transcript": "Thank you very much, you are welcome.",
+      "tokens": [
+        "thank",
+        "you",
+        "very",
+        "much",
+        "you",
+        "are",
+        "welcome"
+      ],
+      "matchedSignsCount": 3,
+      "playableClipsCount": 0,
+      "playableGlosses": [],
+      "dictionaryOnlyMatchesCount": 3,
+      "dictionaryOnlyGlosses": [
+        "THANK_YOU",
+        "YOU",
+        "WELCOME"
+      ],
+      "unsupportedWords": [
+        "very",
+        "much",
+        "are"
+      ],
+      "status": "PARTIAL / UNSUPPORTED"
+    },
+    {
+      "id": "BM-08",
+      "source": "Standard Everyday Conversation Test Query 4",
+      "transcript": "Where is the hospital?",
+      "tokens": [
+        "where",
+        "is",
+        "the",
+        "hospital"
+      ],
+      "matchedSignsCount": 0,
+      "playableClipsCount": 0,
+      "playableGlosses": [],
+      "dictionaryOnlyMatchesCount": 0,
+      "dictionaryOnlyGlosses": [],
+      "unsupportedWords": [
+        "where",
+        "is",
+        "the",
+        "hospital"
+      ],
+      "status": "UNSUPPORTED"
+    }
+  ],
+  "unsupportedTokensInBenchmarkCorpus": [
+    "are",
+    "computing",
+    "hospital",
+    "is",
+    "local",
+    "makes",
+    "morning",
+    "much",
+    "proud",
+    "quantum",
+    "reactor",
+    "recognition",
+    "rocket",
+    "she",
+    "signbridge",
+    "speech",
+    "superconducting",
+    "test",
+    "the",
+    "this",
+    "tokamak",
+    "very",
+    "what",
+    "where",
+    "world"
+  ]
+}

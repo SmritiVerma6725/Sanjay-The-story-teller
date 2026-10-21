@@ -120,6 +120,10 @@
       this.currentSignElapsedMs = 0;
       this.currentSignDurationMs = 0;
       this.lastInterruptedSequenceId = null;
+      this.lastCompletedClip = null;
+      this.lastCompletedGloss = null;
+      this.lastCompletedDurationMs = 0;
+      this.sequenceHadEligibleAnimation = false;
 
       // Initialize Three.js scene
       this._initScene();
@@ -362,6 +366,11 @@
       this.currentTimeMs = 0;
       this.currentClip = null;
       this.currentPoseId = neutralPose.poseId;
+      this.lastCompletedClip = null;
+      this.lastCompletedGloss = null;
+      this.lastCompletedDurationMs = 0;
+      this.sequenceHadEligibleAnimation = false;
+      this.sequencePlaybackState = 'IDLE';
 
       this._notifyStateChange();
       return res.appliedCount > 0;
@@ -467,6 +476,10 @@
       this.sequenceSigns = Array.isArray(sequence.signs) ? sequence.signs : [];
       this.sequenceSignIndex = 0;
       this.currentSignElapsedMs = 0;
+      this.sequenceHadEligibleAnimation = false;
+      this.lastCompletedClip = null;
+      this.lastCompletedGloss = null;
+      this.lastCompletedDurationMs = 0;
 
       // Handle empty sequence (e.g. silence or empty transcript) safely
       if (this.sequenceSigns.length === 0) {
@@ -505,13 +518,35 @@
      */
     _playCurrentSequenceSign() {
       if (!this.activeSequence || this.sequenceSignIndex >= this.sequenceSigns.length) {
-        // Sequence completed
-        this.resetToNeutralPose();
+        // Sequence completed - smoothly return avatar to neutral rest pose
+        const neutralPose = this.keyframeRegistry.NEUTRAL_REST_POSE;
+        this.applyPose(neutralPose);
+        this.currentPoseId = neutralPose.poseId;
+
+        if (this.currentClip) {
+          this.lastCompletedClip = this.currentClip;
+          this.lastCompletedDurationMs = this.currentClip.durationMs;
+          this.currentTimeMs = this.currentClip.durationMs;
+        }
+
+        if (this.sequenceHadEligibleAnimation && this.lastCompletedClip) {
+          this.lastCompletedGloss = this.lastCompletedClip.gloss;
+          this.lastCompletedDurationMs = this.lastCompletedClip.durationMs;
+          this.currentTimeMs = this.lastCompletedClip.durationMs;
+        } else {
+          this.lastCompletedClip = null;
+          this.lastCompletedGloss = null;
+          this.lastCompletedDurationMs = 0;
+          this.currentTimeMs = 0;
+        }
+
+        this.currentClip = null;
+        this.currentSignGloss = null;
         this.sequencePlaybackState = 'COMPLETED';
         this.isPlaying = false;
-        this.currentSignGloss = null;
+        this.isPaused = false;
         this.currentSignIsFallback = false;
-        this.currentSignNotice = 'Sequence playback complete';
+        this.currentSignNotice = 'Sequence playback complete — returned to neutral rest pose';
         this._notifyStateChange();
         return;
       }
@@ -525,6 +560,10 @@
 
       if (resolution.resolved && resolution.clip) {
         // Registered 3D animation clip found
+        this.sequenceHadEligibleAnimation = true;
+        this.lastCompletedClip = resolution.clip;
+        this.lastCompletedGloss = resolution.clip.gloss;
+        this.lastCompletedDurationMs = resolution.clip.durationMs;
         this.currentSignIsFallback = false;
         this.sequencePlaybackState = 'PLAYING';
         this.currentSignNotice = resolution.isLinguisticISL
@@ -534,9 +573,14 @@
       } else {
         // Safe Neutral Rest Pose Fallback for un-animated or unknown glosses
         this.currentSignIsFallback = true;
+        this.currentSignNotice = signItem.source === 'seed_dictionary'
+          ? `Dictionary gloss '${signItem.gloss}' awaiting qualified 3D review — held in neutral rest pose`
+          : `Unknown gloss '${signItem.gloss}' — held in neutral rest pose (no fabricated signing)`;
+        const neutralPose = this.keyframeRegistry.NEUTRAL_REST_POSE;
+        this.applyPose(neutralPose);
+        this.currentPoseId = neutralPose.poseId;
+        this.currentClip = null;
         this.sequencePlaybackState = 'HELD_NEUTRAL';
-        this.currentSignNotice = `Unknown gloss '${signItem.gloss}' — held in neutral rest pose (no fabricated signing)`;
-        this.resetToNeutralPose();
         this.isPlaying = true; // Active in sequence timeline
         this._notifyStateChange();
       }
@@ -614,6 +658,10 @@
       this.sequencePlaybackState = 'IDLE';
       this.currentSignGloss = null;
       this.currentSignIsFallback = false;
+      this.sequenceHadEligibleAnimation = false;
+      this.lastCompletedClip = null;
+      this.lastCompletedGloss = null;
+      this.lastCompletedDurationMs = 0;
       this.resetToNeutralPose();
     }
 
@@ -740,6 +788,10 @@
           labelNotice = this.currentClip.isLinguisticISL
             ? 'Verified linguistic ISL sign'
             : TECHNICAL_TEST_NOTICE;
+        } else if (this.sequencePlaybackState === 'COMPLETED' && this.lastCompletedClip) {
+          labelNotice = this.lastCompletedClip.isLinguisticISL
+            ? 'Verified linguistic ISL sign'
+            : TECHNICAL_TEST_NOTICE;
         } else {
           labelNotice = this.currentSignNotice || NEUTRAL_REST_NOTICE;
         }
@@ -749,17 +801,37 @@
           : TECHNICAL_TEST_NOTICE;
       }
 
+      const activeDuration = this.currentClip
+        ? this.currentClip.durationMs
+        : (this.currentSignIsFallback
+            ? this.currentSignDurationMs
+            : (this.sequencePlaybackState === 'COMPLETED' && this.lastCompletedClip ? (this.lastCompletedDurationMs || 0) : 0));
+
+      const activeClipId = this.currentClip
+        ? this.currentClip.animationId
+        : (this.sequencePlaybackState === 'COMPLETED' && this.lastCompletedClip ? this.lastCompletedClip.animationId : null);
+
+      const activeLinguistic = this.currentClip
+        ? !!this.currentClip.isLinguisticISL
+        : (this.sequencePlaybackState === 'COMPLETED' && this.lastCompletedClip ? !!this.lastCompletedClip.isLinguisticISL : false);
+
+      const activeTime = this.currentClip
+        ? Math.round(this.currentTimeMs)
+        : (this.currentSignIsFallback
+            ? Math.round(this.currentSignElapsedMs)
+            : (this.sequencePlaybackState === 'COMPLETED' && this.lastCompletedClip ? Math.round(this.lastCompletedDurationMs || 0) : 0));
+
       return {
         isLoaded: this.isLoaded,
         isLoading: this.isLoading,
         loadError: this.loadError ? this.loadError.message : null,
         isPlaying: this.isPlaying,
         isPaused: this.isPaused,
-        currentTimeMs: Math.round(this.currentTimeMs),
-        durationMs: this.currentClip ? this.currentClip.durationMs : 0,
-        currentClipId: this.currentClip ? this.currentClip.animationId : null,
+        currentTimeMs: activeTime,
+        durationMs: activeDuration,
+        currentClipId: activeClipId,
         currentPoseId: this.currentPoseId,
-        isLinguisticISL: this.currentClip ? !!this.currentClip.isLinguisticISL : false,
+        isLinguisticISL: activeLinguistic,
         labelNotice,
         boneCount: this.bones.size,
         missingBones: Array.from(this.missingBonesEncountered),
@@ -771,7 +843,7 @@
         activeLanguage: this.activeSequence ? this.activeSequence.language : null,
         sequenceSignsCount: this.sequenceSigns ? this.sequenceSigns.length : 0,
         sequenceSignIndex: this.sequenceSignIndex,
-        currentGloss: this.currentSignGloss,
+        currentGloss: this.currentSignGloss || (this.sequencePlaybackState === 'COMPLETED' && this.lastCompletedClip ? this.lastCompletedGloss : null),
         currentSignIsFallback: this.currentSignIsFallback,
         sequencePlaybackState: this.sequencePlaybackState || 'IDLE',
         unsupportedWords: (this.activeSequence && Array.isArray(this.activeSequence.unsupportedWords))

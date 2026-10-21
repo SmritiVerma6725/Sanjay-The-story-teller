@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordType": "SignBridgeReviewReadySignRecord",
+  "canonicalId": "THANK_YOU",
+  "englishIntent": "Expression of gratitude / thanks",
+  "targetLanguage": "ISL",
+  "authoritativeSource": {
+    "title": "Indian Sign Language Dictionary",
+    "edition": "1st Edition (2018) / 2nd Edition (2019)",
+    "publisher": "Indian Sign Language Research and Training Centre (ISLRTC), Department of Empowerment of Persons with Disabilities (DEPwD), Ministry of Social Justice and Empowerment, Government of India, New Delhi",
+    "category": "Everyday / Social Expressions",
+    "entry": "Thank You / Thanks",
+    "stableUrl": "https://islrtc.nic.in",
+    "license": "Government Open Data License - India (GODL)",
+    "derivativeRightsStatus": "UNRESOLVED_LOCAL_INGESTION",
+    "localSourcePresence": false,
+    "sourceVerificationFinding": "Textual citation exists in ISLRTC dictionary index, but raw reference video, landmark coordinate stream, and official frame-by-frame data have NOT been downloaded or locally verified in this repository. Sourcing from third-party YouTube videos is prohibited under LEGAL-01."
+  },
+  "motionDescription": {
+    "sourceText": "Flat dominant hand touching chin/lips, moving downward and forward toward addressee",
+    "phonologicalParameters": {
+      "handshape": "Flat open hand (B-hand, fingers together, thumb alongside)",
+      "location": "Starts at chin / lower lip, finishes in neutral signing space in front of torso",
+      "orientation": "Palm facing inward toward chin at start; tilting slightly upward/forward at terminus",
+      "movement": "Smooth downward and forward trajectory toward addressee; slight accompanying head nod",
+      "nonManualMarkers": "Warm facial expression, slight respectful head nod, eye contact with recipient"
+    },
+    "regionalVariations": "In some Indian Deaf communities, two-handed slight bow with Namaste gesture is used in formal situations to express deep gratitude, while the chin-forward gesture serves as standard conversational ISL 'Thank you'."
+  },
+  "requiredAnimationAsset": {
+    "animationId": "isl_thank_you_v1",
+    "targetDurationMs": 800,
+    "assetPresence": false,
+    "assetPath": null,
+    "sha256": null
+  },
+  "expectedSkeletonMapping": {
+    "rigType": "Adobe Mixamo Y-Bot",
+    "jointCount": "65-67 canonical joints",
+    "primaryActiveJoints": [
+      "RightShoulder",
+      "RightArm",
+      "RightForeArm",
+      "RightHand",
+      "RightHandIndex1",
+      "RightHandMiddle1",
+      "RightHandRing1",
+      "RightHandPinky1",
+      "RightHandThumb1",
+      "Neck",
+      "Head"
+    ]
+  },
+  "technicalValidationStatus": "BLOCKED_SOURCE_OR_REVIEW",
+  "linguisticReviewStatus": "AWAITING_DEAF_NATIVE_PANEL_EVALUATION",
+  "implementationReadiness": "BLOCKED_SOURCE_OR_REVIEW",
+  "blockingReasons": [
+    "No official raw ISLRTC video or landmark dataset for 'Thank You' is stored or licensed locally in the workspace.",
+    "No verified 3D motion-capture or keyframe animation asset exists.",
+    "Generating guessed or synthetic keyframes violates PRD non-hallucination principles.",
+    "Zero certified Deaf-native human panel reviews have evaluated this sign."
+  ],
+  "reviewWorksheetReference": "Docs/ISL_THANK_YOU_REVIEW_WORKSHEET.md",
+  "approvalHistory": []
+}

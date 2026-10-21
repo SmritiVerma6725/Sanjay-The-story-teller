@@ -123,12 +123,12 @@ class TestM4Stage3QueueBoundsAndBuffers(unittest.TestCase):
 
     def test_08_sequence_de_duplication_enforced(self):
         """Verifies monotonic sequence ID enforcement prevents duplicate transcript execution."""
-        avatar_html = (ROOT / 'extension' / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        avatar_js = (ROOT / 'extension' / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
         
-        self.assertIn("lastProcessedSeqId", avatar_html, "avatar_player.html must track lastProcessedSeqId")
+        self.assertIn("lastProcessedSeqId", avatar_js, "avatar_player_controller.js must track lastProcessedSeqId")
         self.assertTrue(
-            "payload.sequenceId <= lastProcessedSeqId" in avatar_html,
-            "avatar_player.html must drop duplicate or out-of-order sequence IDs"
+            "payload.sequenceId <= lastProcessedSeqId" in avatar_js,
+            "avatar_player_controller.js must drop duplicate or out-of-order sequence IDs"
         )
 
 
@@ -179,31 +179,31 @@ class TestM4Stage3FailureRecoveryScenarios(unittest.TestCase):
     def test_12_backend_unavailable_error_reporting(self):
         """Verifies offscreen and player gracefully handle backend unavailability."""
         offscreen_js = (ROOT / 'extension' / 'offscreen.js').read_text(encoding='utf-8')
-        avatar_html = (ROOT / 'extension' / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        avatar_js = (ROOT / 'extension' / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
 
         self.assertIn("Backend offline", offscreen_js, "offscreen.js must detect offline backend")
-        self.assertIn("pollLocalBackendTranscript", avatar_html, "avatar_player.html must support polling fallback")
+        self.assertIn("pollLocalBackendTranscript", avatar_js, "avatar_player_controller.js must support polling fallback")
 
     def test_13_silence_handled_without_animation_distortion(self):
         """Verifies empty transcript returns neutral status and does not trigger animations."""
-        avatar_html = (ROOT / 'extension' / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        avatar_js = (ROOT / 'extension' / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
         
-        self.assertIn("Silence detected — Holding neutral rest pose (zero gestures)", avatar_html)
-        self.assertIn("player.resetToNeutralPose()", avatar_html)
+        self.assertIn("Silence detected — Holding neutral rest pose (zero gestures)", avatar_js)
+        self.assertIn("player.resetToNeutralPose()", avatar_js)
 
     def test_14_unsupported_words_surface_in_ui(self):
         """Verifies unsupported phrases surface in UI and do not invent hallucinations."""
-        avatar_html = (ROOT / 'extension' / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        avatar_js = (ROOT / 'extension' / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
         
-        self.assertIn("Out-of-lexicon words", avatar_html)
-        self.assertIn("PRD: Zero synthetic gestures", avatar_html)
+        self.assertIn("Out-of-lexicon words", avatar_js)
+        self.assertIn("PRD: Zero synthetic gestures", avatar_js)
 
     def test_15_capture_stop_cleans_up_state(self):
         """Verifies capture stop event resets bridge status to IDLE and neutral pose."""
-        avatar_html = (ROOT / 'extension' / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        avatar_js = (ROOT / 'extension' / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
         
-        self.assertIn("CAPTURE: IDLE", avatar_html)
-        self.assertIn("Capture session stopped — Avatar at neutral rest pose", avatar_html)
+        self.assertIn("CAPTURE: IDLE", avatar_js)
+        self.assertIn("Capture session stopped — Avatar at neutral rest pose", avatar_js)
 
 
 if __name__ == '__main__':

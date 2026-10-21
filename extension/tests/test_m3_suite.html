@@ -1147,12 +1147,27 @@
           assert(sharedPlayer.model !== null, "Model scene should be populated");
         },
 
-        "Discovers all 67 canonical joints on the physical SkinnedMesh": () => {
-          assertEqual(sharedPlayer.bones.size, 67, "Expected exactly 67 canonical bones mapped in Y-Bot rig");
+        "Discovers all canonical signing joints on the physical SkinnedMesh": () => {
+          assert(sharedPlayer.bones.size >= 65 && sharedPlayer.bones.size <= 67,
+            `Expected 65 standard or 67 extended canonical bones mapped in Y-Bot rig, got ${sharedPlayer.bones.size}`);
           assert(sharedPlayer.bones.has("RightArm"), "RightArm joint should be mapped");
           assert(sharedPlayer.bones.has("LeftArm"), "LeftArm joint should be mapped");
           assert(sharedPlayer.bones.has("RightHandIndex1"), "Finger bones should be mapped");
           assert(sharedPlayer.bones.has("LeftHandThumb4"), "Thumb bones should be mapped");
+
+          // Verify every required non-eye canonical joint from CANONICAL_BONES is physically present
+          const optionalBones = new Set(["LeftEye", "RightEye"]);
+          for (const boneName of K.CANONICAL_BONES) {
+            if (!optionalBones.has(boneName)) {
+              assert(sharedPlayer.bones.has(boneName), `Required signing joint '${boneName}' must exist on physical rig`);
+            }
+          }
+
+          // If a 67-bone rig is loaded, verify eye bones are mapped; otherwise treat as optional
+          if (sharedPlayer.bones.size === 67) {
+            assert(sharedPlayer.bones.has("LeftEye"), "LeftEye should be mapped on 67-bone extended rig");
+            assert(sharedPlayer.bones.has("RightEye"), "RightEye should be mapped on 67-bone extended rig");
+          }
         },
 
         "Automatically applies NEUTRAL_REST_POSE upon model load, lowering arms from T-pose": () => {

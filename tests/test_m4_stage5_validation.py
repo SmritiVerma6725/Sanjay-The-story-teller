@@ -94,11 +94,11 @@ class TestM4Stage5Validation(unittest.TestCase):
 
     def test_05_monotonic_sequence_ordering_and_deduplication(self):
         """Verifies avatar player enforces monotonic sequence IDs and discards duplicates or out-of-order packets."""
-        player_html = (self.ext_dir / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        player_js = (self.ext_dir / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
         
-        self.assertIn("lastProcessedSeqId", player_html)
-        self.assertIn("payload.sequenceId <= lastProcessedSeqId", player_html)
-        self.assertIn("Dropping duplicate or out-of-order chunk", player_html)
+        self.assertIn("lastProcessedSeqId", player_js)
+        self.assertIn("payload.sequenceId <= lastProcessedSeqId", player_js)
+        self.assertIn("Dropping duplicate or out-of-order chunk", player_js)
 
     # --------------------------------------------------------------------------
     # Phase B & D: Linguistic Handling, Honest Telemetry & Neutral Pose
@@ -106,39 +106,39 @@ class TestM4Stage5Validation(unittest.TestCase):
 
     def test_06_silence_handling_and_neutral_pose(self):
         """Verifies silence or empty audio returns status='empty' and holds neutral pose with zero gestures."""
-        player_html = (self.ext_dir / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        player_js = (self.ext_dir / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
         
-        self.assertIn("Silence detected — Holding neutral rest pose (zero gestures)", player_html)
-        self.assertIn("player.resetToNeutralPose()", player_html)
+        self.assertIn("Silence detected — Holding neutral rest pose (zero gestures)", player_js)
+        self.assertIn("player.resetToNeutralPose()", player_js)
 
     def test_07_low_confidence_and_noisy_audio_handling(self):
         """Verifies confidence scores < 0.60 trigger low-confidence badge and do not trigger false gestures."""
-        player_html = (self.ext_dir / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        player_js = (self.ext_dir / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
         transcriber_py = (self.backend_dir / 'transcriber.py').read_text(encoding='utf-8')
         
         # Backend calculates confidence / probability per word
         self.assertIn("probability", transcriber_py)
         # UI renders low-confidence badge
-        self.assertIn("Low ASR Confidence", player_html)
-        self.assertIn("payload.confidence < 0.60", player_html)
+        self.assertIn("Low ASR Confidence", player_js)
+        self.assertIn("payload.confidence < 0.60", player_js)
 
     def test_08_honest_unsupported_words_and_zero_fake_gestures(self):
         """Verifies out-of-lexicon words are surfaced explicitly and avatar holds neutral rest pose without fake gestures."""
-        player_html = (self.ext_dir / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        player_js = (self.ext_dir / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
         translator_js = (self.ext_dir / 'translation' / 'isl_translator.js').read_text(encoding='utf-8')
         
         # Translator tracks unsupported words
         self.assertIn("unsupportedWords", translator_js)
         # Player renders honest warning and holds neutral pose
-        self.assertIn("Out-of-lexicon words:", player_html)
-        self.assertIn("Neutral pose held (PRD: Zero synthetic gestures)", player_html)
+        self.assertIn("Out-of-lexicon words:", player_js)
+        self.assertIn("Neutral pose held (PRD: Zero synthetic gestures)", player_js)
 
     def test_09_unanimated_dictionary_words_awaiting_review(self):
         """Verifies dictionary words without 3D animations are displayed as awaiting review and hold neutral pose."""
-        player_html = (self.ext_dir / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        player_js = (self.ext_dir / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
         
-        self.assertIn("Words in dictionary, 3D animation awaiting qualified review", player_html)
-        self.assertIn("neutral pose held", player_html)
+        self.assertIn("Words in dictionary, 3D animation awaiting qualified review", player_js)
+        self.assertIn("neutral pose held", player_js)
 
     def test_10_production_baseline_namaste_metadata(self):
         """Verifies 'namaste' resolves to isl_namaste_godl_v1 and is marked as experimental_awaiting_validation."""
@@ -273,6 +273,7 @@ class TestM4Stage5Validation(unittest.TestCase):
             self.ext_dir / 'popup.html',
             self.ext_dir / 'popup.js',
             self.ext_dir / 'overlay' / 'avatar_player.html',
+            self.ext_dir / 'overlay' / 'avatar_player_controller.js',
             self.ext_dir / 'icons' / 'icon-16.png',
             self.ext_dir / 'icons' / 'icon-48.png',
             self.ext_dir / 'icons' / 'icon-128.png',

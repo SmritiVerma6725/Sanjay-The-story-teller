@@ -54,11 +54,12 @@ class TestM6ReleaseVerification(unittest.TestCase):
         self.assertTrue((self.ext_dir / 'animation' / 'keyframe_registry.js').exists(), "keyframe_registry.js must exist")
         self.assertTrue((self.ext_dir / 'animation' / 'avatar_player.js').exists(), "avatar_player.js must exist")
         self.assertTrue((self.ext_dir / 'overlay' / 'avatar_player.html').exists(), "avatar_player.html must exist")
+        self.assertTrue((self.ext_dir / 'overlay' / 'avatar_player_controller.js').exists(), "avatar_player_controller.js must exist")
 
     def test_02_versioned_transcription_dispatch_contract(self):
         """Verifies transcription dispatch payload strictly adheres to version 1.0.0 contract schema."""
         bg_js = (self.ext_dir / 'background.js').read_text(encoding='utf-8')
-        player_html = (self.ext_dir / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
+        player_js = (self.ext_dir / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
 
         # Background construct
         self.assertIn('version: "1.0.0"', bg_js)
@@ -68,14 +69,14 @@ class TestM6ReleaseVerification(unittest.TestCase):
         self.assertIn('confidence: confidence', bg_js)
 
         # Player consumer
-        self.assertIn('payload.version !== "1.0.0"', player_html)
-        self.assertIn('message.type === "SIGNBRIDGE_TRANSCRIPTION_DISPATCH"', player_html)
+        self.assertIn('payload.version !== "1.0.0"', player_js)
+        self.assertIn('message.type === "SIGNBRIDGE_TRANSCRIPTION_DISPATCH"', player_js)
 
     def test_03_monotonic_sequence_and_deduplication(self):
         """Verifies that avatar player drops duplicate or out-of-order sequence packets."""
-        player_html = (self.ext_dir / 'overlay' / 'avatar_player.html').read_text(encoding='utf-8')
-        self.assertIn('payload.sequenceId <= lastProcessedSeqId', player_html)
-        self.assertIn('lastProcessedSeqId = payload.sequenceId', player_html)
+        player_js = (self.ext_dir / 'overlay' / 'avatar_player_controller.js').read_text(encoding='utf-8')
+        self.assertIn('payload.sequenceId <= lastProcessedSeqId', player_js)
+        self.assertIn('lastProcessedSeqId = payload.sequenceId', player_js)
 
     # --------------------------------------------------------------------------
     # 2. Audio Capture & Playback Preservation

@@ -1,0 +1,141 @@
+{
+  "backlogVersion": "1.0.0",
+  "milestone": "SignBridge M8 \u2014 Controlled ISL Vocabulary Expansion Backlog",
+  "generatedAt": "2026-10-21T17:15:00Z",
+  "governanceNotice": "All candidate expressions require certified Deaf-native expert confirmation and 3D authoring before inclusion. No experimental asset may be auto-promoted.",
+  "totalBacklogItems": 12,
+  "items": [
+    {
+      "priority": 1,
+      "gloss": "HELLO",
+      "englishMeaning": "Polite greeting / saying hello",
+      "candidateISLExpression": "Open flat hand raised to temple/chest, gentle outward forward arc (ISLRTC Vol 1, Word #0002)",
+      "requiredAnimationAsset": "isl_hello_v1",
+      "provenanceAndRightsStatus": "ISLRTC Dictionary Vol 1 (data.gov.in / GODL)",
+      "linguisticReviewStatus": "Candidate backlog (0/3 reviews completed)",
+      "technicalPlaybackStatus": "Unanimated in repo / No 3D keyframe asset linked",
+      "benchmarkSource": "test_speech_sample.wav ('Hello world')"
+    },
+    {
+      "priority": 2,
+      "gloss": "THANK_YOU",
+      "englishMeaning": "Expression of gratitude / thanks",
+      "candidateISLExpression": "Flat dominant hand touching chin/lips, moving downward and forward toward addressee (ISLRTC Vol 1)",
+      "requiredAnimationAsset": "isl_thank_you_v1",
+      "provenanceAndRightsStatus": "ISLRTC Dictionary Vol 1 (data.gov.in / GODL)",
+      "linguisticReviewStatus": "Candidate backlog (0/3 reviews completed)",
+      "technicalPlaybackStatus": "Unanimated in repo / Multi-word lemma ('thank you', 'thanks')",
+      "benchmarkSource": "Benchmark conversational corpus ('Thank you very much')"
+    },
+    {
+      "priority": 3,
+      "gloss": "HELP",
+      "englishMeaning": "Requesting or offering assistance / aid",
+      "candidateISLExpression": "Closed dominant fist resting on open flat non-dominant palm, moving forward/upward together (ISLRTC Vol 1)",
+      "requiredAnimationAsset": "isl_help_v1",
+      "provenanceAndRightsStatus": "ISLRTC Dictionary Vol 1 (data.gov.in / GODL)",
+      "linguisticReviewStatus": "Candidate backlog (0/3 reviews completed)",
+      "technicalPlaybackStatus": "Unanimated in repo / No 3D keyframe asset linked",
+      "benchmarkSource": "Benchmark conversational corpus ('Please help me')"
+    },
+    {
+      "priority": 4,
+      "gloss": "PLEASE",
+      "englishMeaning": "Polite request marker",
+      "candidateISLExpression": "Flat open hand rubbing clockwise over center of chest (ISLRTC Vol 1)",
+      "requiredAnimationAsset": "isl_please_v1",
+      "provenanceAndRightsStatus": "ISLRTC Dictionary Vol 1 (data.gov.in / GODL)",
+      "linguisticReviewStatus": "Candidate backlog (0/3 reviews completed)",
+      "technicalPlaybackStatus": "Unanimated in repo / No 3D keyframe asset linked",
+      "benchmarkSource": "Benchmark conversational corpus ('Please help me')"
+    },
+    {
+      "priority": 5,
+      "gloss": "GOOD",
+      "englishMeaning": "Expression of quality, well-being, or greeting ('Good morning')",
+      "candidateISLExpression": "Dominant thumb-up fist moving forward from chest (ISLRTC Vol 1)",
+      "requiredAnimationAsset": "isl_good_v1",
+      "provenanceAndRightsStatus": "ISLRTC Dictionary Vol 1 (data.gov.in / GODL)",
+      "linguisticReviewStatus": "Candidate backlog (0/3 reviews completed)",
+      "technicalPlaybackStatus": "Unanimated in repo / No 3D keyframe asset linked",
+      "benchmarkSource": "Benchmark conversational corpus ('Good morning')"
+    },
+    {
+      "priority": 6,
+      "gloss": "NAME",
+      "englishMeaning": "Inquiring or stating a person's name",
+      "candidateISLExpression": "Dominant H-hand tapping non-dominant H-hand index/middle fingers (ISLRTC Vol 1)",
+      "requiredAnimationAsset": "isl_name_v1",
+      "provenanceAndRightsStatus": "ISLRTC Dictionary Vol 1 (data.gov.in / GODL)",
+      "linguisticReviewStatus": "Candidate backlog (0/3 reviews completed)",
+      "technicalPlaybackStatus": "Unanimated in repo / No 3D keyframe asset linked",
+      "benchmarkSource": "Benchmark conversational corpus ('What is your name?')"
+    },
+    {
+      "priority": 7,
+      "gloss": "YOU",
+      "englishMeaning": "Referring to addressee (2nd person pronoun)",
+      "candidateISLExpression": "Dominant index finger pointing forward directly toward addressee in 3D signing space (Spatial deictic)",
+      "requiredAnimationAsset": "isl_you_deictic_v1",
+      "provenanceAndRightsStatus": "Standard ISL spatial deictic pointing syntax",
+      "linguisticReviewStatus": "Candidate backlog (0/3 reviews completed)",
+      "technicalPlaybackStatus": "Unanimated in repo / Fallback 500ms neutral hold",
+      "benchmarkSource": "Live Speech Routing Regression (Scenario 2, Scenario 5)"
+    },
+    {
+      "priority": 8,
+      "gloss": "I",
+      "englishMeaning": "Referring to signer (1st person pronoun)",
+      "candidateISLExpression": "Dominant index finger pointing inward toward center of signer sternum (Spatial deictic)",
+      "requiredAnimationAsset": "isl_i_deictic_v1",
+      "provenanceAndRightsStatus": "Standard ISL spatial deictic pointing syntax",
+      "linguisticReviewStatus": "Candidate backlog (0/3 reviews completed)",
+      "technicalPlaybackStatus": "Unanimated in repo / Fallback 500ms neutral hold",
+      "benchmarkSource": "Live Speech Routing Regression (Scenario 8: 'me' -> I)"
+    },
+    {
+      "priority": 9,
+      "gloss": "WHAT",
+      "englishMeaning": "WH-question inquiring about identity, name, or object",
+      "candidateISLExpression": "Both open hands held forward palms up, slight side-to-side flutter with furrowed eyebrows (ISLRTC Vol 1)",
+      "requiredAnimationAsset": "isl_what_wh_v1",
+      "provenanceAndRightsStatus": "ISLRTC Dictionary Vol 1 (data.gov.in / GODL)",
+      "linguisticReviewStatus": "Candidate backlog (0/3 reviews completed)",
+      "technicalPlaybackStatus": "Missing from SEED_LEXICON / Grammar heuristic shifts to terminus",
+      "benchmarkSource": "Benchmark conversational corpus ('What is your name?')"
+    },
+    {
+      "priority": 10,
+      "gloss": "WHERE",
+      "englishMeaning": "WH-question inquiring about location ('Where is...')",
+      "candidateISLExpression": "Dominant index finger wagging side-to-side with questioning facial expression (ISLRTC Vol 1)",
+      "requiredAnimationAsset": "isl_where_wh_v1",
+      "provenanceAndRightsStatus": "ISLRTC Dictionary Vol 1 (data.gov.in / GODL)",
+      "linguisticReviewStatus": "Candidate backlog (0/3 reviews completed)",
+      "technicalPlaybackStatus": "Missing from SEED_LEXICON / Grammar heuristic shifts to terminus",
+      "benchmarkSource": "Benchmark conversational corpus ('Where is the hospital?')"
+    },
+    {
+      "priority": 11,
+      "gloss": "PROUD",
+      "englishMeaning": "Expression of deep satisfaction / pride",
+      "candidateISLExpression": "Dominant thumb pointing upward, moving up center chest toward neck (ISLRTC Dictionary)",
+      "requiredAnimationAsset": "isl_proud_v1",
+      "provenanceAndRightsStatus": "ISLRTC Dictionary (data.gov.in / GODL)",
+      "linguisticReviewStatus": "Candidate backlog (0/3 reviews completed)",
+      "technicalPlaybackStatus": "Missing from SEED_LEXICON / Holds neutral rest pose",
+      "benchmarkSource": "Scenario 8 ('She makes me very, very proud.')"
+    },
+    {
+      "priority": 12,
+      "gloss": "WORLD",
+      "englishMeaning": "The earth / global sphere",
+      "candidateISLExpression": "Both W-hands or cupped hands circling each other forming a spherical shape (ISLRTC Dictionary)",
+      "requiredAnimationAsset": "isl_world_v1",
+      "provenanceAndRightsStatus": "ISLRTC Dictionary (data.gov.in / GODL)",
+      "linguisticReviewStatus": "Candidate backlog (0/3 reviews completed)",
+      "technicalPlaybackStatus": "Missing from SEED_LEXICON / Holds neutral rest pose",
+      "benchmarkSource": "test_speech_sample.wav ('Hello world')"
+    }
+  ]
+}

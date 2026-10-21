@@ -203,14 +203,12 @@ def run_test():
         }
         if (ev.data.type === "M4_TEST_DISPATCH") {
             // Direct call to avatar bridge handler if exposed or simulated
-            if (typeof handleLiveTranscriptDispatch === "function") {
-                handleLiveTranscriptDispatch(ev.data.payload);
-            }
+            const fn = window.handleLiveTranscriptDispatch || (typeof handleLiveTranscriptDispatch === "function" ? handleLiveTranscriptDispatch : null);
+            if (fn) fn(ev.data.payload);
         }
         if (ev.data.type === "M4_TEST_STOP") {
-            if (typeof handleCaptureStopped === "function") {
-                handleCaptureStopped(ev.data.payload);
-            }
+            const fn = window.handleCaptureStopped || (typeof handleCaptureStopped === "function" ? handleCaptureStopped : null);
+            if (fn) fn(ev.data.payload);
         }
     });
     """
@@ -218,21 +216,17 @@ def run_test():
     # Fetch html page and inject runner
     html_raw = urllib.request.urlopen(URL).read().decode("utf-8")
     runner_html_path = os.path.abspath("extension/overlay/avatar_player_m4_runner.html")
+    runner_js_path = os.path.abspath("extension/overlay/avatar_player_m4_runner.js")
 
-    # Expose the handlers on window in runner if they are local
     injected_html = html_raw.replace(
-        "function handleLiveTranscriptDispatch(payload) {",
-        "window.handleLiveTranscriptDispatch = handleLiveTranscriptDispatch; function handleLiveTranscriptDispatch(payload) {"
-    ).replace(
-        "function handleCaptureStopped(payload) {",
-        "window.handleCaptureStopped = handleCaptureStopped; function handleCaptureStopped(payload) {"
-    ).replace(
         "</body>",
-        f"<script>{script_eval}</script></body>"
+        '<script src="avatar_player_m4_runner.js"></script></body>'
     )
 
     with open(runner_html_path, "w", encoding="utf-8") as f:
         f.write(injected_html)
+    with open(runner_js_path, "w", encoding="utf-8") as f:
+        f.write(script_eval)
 
     runner_url = f"http://127.0.0.1:{PORT}/extension/overlay/avatar_player_m4_runner.html"
     print(f"[M4 E2E Test] Created runner at: {runner_url}")
@@ -385,6 +379,8 @@ def run_test():
         httpd.shutdown()
         if os.path.exists(runner_html_path):
             os.remove(runner_html_path)
+        if os.path.exists(runner_js_path):
+            os.remove(runner_js_path)
         shutil.rmtree(temp_profile, ignore_errors=True)
 
 

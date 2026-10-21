@@ -111,11 +111,19 @@
     }
   }
 
+  let activePopupHealthCheckId = 0;
+  let isPopupHealthCheckInFlight = false;
+
   // Check local Python backend health
   async function checkBackendHealth() {
+    if (isPopupHealthCheckInFlight) return;
+    const checkId = ++activePopupHealthCheckId;
+    isPopupHealthCheckInFlight = true;
+
     backendText.textContent = "Checking...";
+    const HEALTH_TIMEOUT_MS = 5000;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1200);
+    const timeoutId = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
 
     try {
       const res = await fetch(BACKEND_URL, {
@@ -124,18 +132,29 @@
       });
       clearTimeout(timeoutId);
 
+      if (checkId !== activePopupHealthCheckId) return;
+
       if (res.ok) {
         const data = await res.json();
-        backendDot.className = "status-dot dot-online";
-        backendText.textContent = `Online (${data.model || "Whisper"}, ${data.compute_type || "CPU"})`;
+        if (data && data.status === "ok") {
+          backendDot.className = "status-dot dot-online";
+          backendText.textContent = `Online (${data.model || "Whisper"}, ${data.compute_type || "CPU"})`;
+        } else {
+          backendDot.className = "status-dot dot-offline";
+          backendText.textContent = "Offline (Malformed response)";
+        }
       } else {
         backendDot.className = "status-dot dot-offline";
-        backendText.textContent = "Offline (HTTP error)";
+        backendText.textContent = `Offline (HTTP ${res.status})`;
       }
     } catch (e) {
       clearTimeout(timeoutId);
+      if (checkId !== activePopupHealthCheckId) return;
+      const isTimeout = e.name === "AbortError";
       backendDot.className = "status-dot dot-offline";
-      backendText.textContent = "Offline (Run python run.py)";
+      backendText.textContent = isTimeout ? "Offline (Timeout >5s)" : "Offline (Run python run.py)";
+    } finally {
+      isPopupHealthCheckInFlight = false;
     }
   }
 

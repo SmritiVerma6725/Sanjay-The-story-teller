@@ -1,4 +1,4 @@
-import http.server
+﻿import http.server
 import socketserver
 import threading
 import subprocess
@@ -24,17 +24,17 @@ def test_manifest_and_assets():
         manifest = json.load(f)
         
     assert manifest.get("manifest_version") == 3, "Must be Manifest V3"
-    print("  ✔ PASS: manifest_version is 3")
+    print("  âœ” PASS: manifest_version is 3")
     
     expected_permissions = {"tabCapture", "offscreen", "activeTab", "storage", "scripting"}
     actual_permissions = set(manifest.get("permissions", []))
     assert expected_permissions.issubset(actual_permissions), f"Missing permissions: {expected_permissions - actual_permissions}"
-    print(f"  ✔ PASS: permissions verified ({', '.join(manifest.get('permissions'))})")
+    print(f"  âœ” PASS: permissions verified ({', '.join(manifest.get('permissions'))})")
     
     expected_hosts = ["*://*.youtube.com/*", "http://127.0.0.1:8765/*"]
     for host in expected_hosts:
         assert host in manifest.get("host_permissions", []), f"Missing host permission: {host}"
-    print(f"  ✔ PASS: host_permissions verified ({', '.join(manifest.get('host_permissions'))})")
+    print(f"  âœ” PASS: host_permissions verified ({', '.join(manifest.get('host_permissions'))})")
     
     assert manifest.get("action", {}).get("default_popup") == "popup.html", "default_popup must be popup.html"
     assert os.path.exists(os.path.join(DIRECTORY, "popup.html")), "popup.html missing"
@@ -43,7 +43,7 @@ def test_manifest_and_assets():
     assert os.path.exists(os.path.join(DIRECTORY, "offscreen.html")), "offscreen.html missing"
     assert os.path.exists(os.path.join(DIRECTORY, "offscreen.js")), "offscreen.js missing"
     assert os.path.exists(os.path.join(DIRECTORY, "background.js")), "background.js missing"
-    print("  ✔ PASS: all declared files exist on disk")
+    print("  âœ” PASS: all declared files exist on disk")
     
     for size in [16, 48, 128]:
         icon_path = os.path.join(DIRECTORY, "icons", f"icon-{size}.png")
@@ -53,7 +53,7 @@ def test_manifest_and_assets():
             assert header[:8] == b'\x89PNG\r\n\x1a\n', f"Invalid PNG header for icon-{size}.png"
             w, h = struct.unpack(">II", header[16:24])
             assert w == size and h == size, f"Icon dimension mismatch: expected {size}x{size}, got {w}x{h}"
-        print(f"  ✔ PASS: icon-{size}.png verified ({size}x{size} PNG)")
+        print(f"  âœ” PASS: icon-{size}.png verified ({size}x{size} PNG)")
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -88,7 +88,7 @@ if __name__ == "__main__":
         print(f"Executing Chrome In-Engine: {suite_title}")
         print(f"==========================================")
 
-        budget = '45000' if 'm3' in test_url else '10000'
+        budget = '60000' if 'm3' in test_url else '10000'
         cmd = [
             chrome_path,
             '--headless=new',

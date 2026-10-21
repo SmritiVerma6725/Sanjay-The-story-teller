@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordType": "SignBridgeReviewReadySignRecord",
+  "canonicalId": "HELLO",
+  "englishIntent": "Polite greeting / saying hello",
+  "targetLanguage": "ISL",
+  "authoritativeSource": {
+    "title": "Indian Sign Language Dictionary",
+    "edition": "1st Edition (2018) / 2nd Edition (2019)",
+    "publisher": "Indian Sign Language Research and Training Centre (ISLRTC), Department of Empowerment of Persons with Disabilities (DEPwD), Ministry of Social Justice and Empowerment, Government of India, New Delhi",
+    "category": "Everyday / Salutations",
+    "entry": "Hello",
+    "stableUrl": "https://islrtc.nic.in",
+    "license": "Government Open Data License - India (GODL)",
+    "derivativeRightsStatus": "UNRESOLVED_LOCAL_INGESTION",
+    "localSourcePresence": false,
+    "sourceVerificationFinding": "Textual citation exists in ISLRTC dictionary index, but raw reference video, landmark coordinate stream, and official frame-by-frame data have NOT been downloaded or locally verified in this repository. Sourcing from third-party YouTube videos is prohibited under LEGAL-01."
+  },
+  "motionDescription": {
+    "sourceText": "Open flat hand raised to temple/chest, gentle outward forward arc",
+    "phonologicalParameters": {
+      "handshape": "Open flat B-hand or 5-hand (fingers extended together or relaxed)",
+      "location": "Ipsilateral temple or upper chest",
+      "orientation": "Palm facing forward or slightly contralateral; fingertips pointing upward",
+      "movement": "Gentle outward forward arc / salutation wave",
+      "nonManualMarkers": "Pleasant facial expression, direct eye contact with addressee"
+    },
+    "regionalVariations": "Urban ISL communities (Delhi, Mumbai, Bengaluru) exhibit slight variations in starting height (temple vs. mid-chest) and single vs. double arc wave. Formal greeting in traditional Indian contexts frequently defaults to NAMASTE (Anjali Mudra)."
+  },
+  "requiredAnimationAsset": {
+    "animationId": "isl_hello_v1",
+    "targetDurationMs": 700,
+    "assetPresence": false,
+    "assetPath": null,
+    "sha256": null
+  },
+  "expectedSkeletonMapping": {
+    "rigType": "Adobe Mixamo Y-Bot",
+    "jointCount": "65-67 canonical joints",
+    "primaryActiveJoints": [
+      "RightShoulder",
+      "RightArm",
+      "RightForeArm",
+      "RightHand",
+      "RightHandIndex1",
+      "RightHandMiddle1",
+      "RightHandRing1",
+      "RightHandPinky1",
+      "RightHandThumb1",
+      "Head"
+    ]
+  },
+  "technicalValidationStatus": "BLOCKED_SOURCE_OR_REVIEW",
+  "linguisticReviewStatus": "AWAITING_DEAF_NATIVE_PANEL_EVALUATION",
+  "implementationReadiness": "BLOCKED_SOURCE_OR_REVIEW",
+  "blockingReasons": [
+    "No official raw ISLRTC video or landmark dataset for 'Hello' is stored or licensed locally in the workspace.",
+    "No verified 3D motion-capture or keyframe animation asset exists.",
+    "Generating guessed or synthetic keyframes violates PRD non-hallucination principles.",
+    "Zero certified Deaf-native human panel reviews have evaluated this sign."
+  ],
+  "reviewWorksheetReference": "Docs/ISL_HELLO_REVIEW_WORKSHEET.md",
+  "approvalHistory": []
+}
