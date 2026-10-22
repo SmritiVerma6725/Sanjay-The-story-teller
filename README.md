@@ -228,7 +228,6 @@ For the exhaustive granular provenance audit across all libraries, models, and c
 <div align="center">
   <h3>AUTHORS & BUILDERS</h3>
   <p>
-    <strong>Lakshya Dogra</strong><br>
     <strong>Smriti Verma</strong>
   </p>
 </div>
