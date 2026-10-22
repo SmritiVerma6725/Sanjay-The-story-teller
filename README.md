@@ -226,7 +226,7 @@ For the exhaustive granular provenance audit across all libraries, models, and c
 ---
 
 <div align="center">
-  <h3>AUTHORS & BUILDERS</h3>
+  <h3>AUTHOR & BUILDER</h3>
   <p>
     <strong>Smriti Verma</strong>
   </p>
