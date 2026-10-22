@@ -1,0 +1,100 @@
+{
+  "$schema": "signbridge-sample-manifest-v1",
+  "manifestVersion": "1.0.0",
+  "metadata": {
+    "title": "Daily Routine — Controlled Single-Video Prototype Segment",
+    "videoTitle": "Daily Routine | A1 English | Talk About Your Day | English Podcast",
+    "channel": "Mr. English Channel",
+    "youtubeUrl": "https://www.youtube.com/watch?v=sMkzwmMs0jM",
+    "license": "Standard YouTube License. No video redistribution or local storage permitted (LEGAL-01).",
+    "createdTimestamp": "2026-10-22T13:45:00Z",
+    "lastUpdatedTimestamp": "2026-10-22T14:05:00Z",
+    "windowTimingNote": "Strictly trimmed to 01:35–01:55 (95000–115000 ms). Only complete utterances finishing within this 20-second boundary are included. The subsequent sentence 'I put on my clothes for the day' (01:52–01:58) was deliberately excluded because it finishes past the 01:55 boundary at 01:58."
+  },
+  "segment": {
+    "startMediaTimeMs": 95000,
+    "endMediaTimeMs": 115000,
+    "durationMs": 20000,
+    "timeRangeFormatted": "01:35 - 01:55"
+  },
+  "transcript": {
+    "source": "YouTube TimedText (Lawfully retrieved without video download)",
+    "verified": true,
+    "items": [
+      {
+        "id": "line_01",
+        "startMs": 98000,
+        "endMs": 106000,
+        "text": "I walk to the bathroom to wash my face and brush my teeth."
+      },
+      {
+        "id": "line_02",
+        "startMs": 106000,
+        "endMs": 112000,
+        "text": "After that, I go back to my bedroom to get dressed."
+      }
+    ]
+  },
+  "islTranslation": {
+    "reviewStatus": "PENDING_DEAF_NATIVE_REVIEW",
+    "isApproved": false,
+    "reviewsCompleted": 0,
+    "reviewsRequired": 3,
+    "reviewerQualifications": "Certified Deaf-native ISL linguist / ISLRTC accredited instructor",
+    "disclaimer": "UNAPPROVED PROVISIONAL CANDIDATE ONLY. This is NOT a validated or approved ISL translation. Strictly requires review and sign-off by 3 qualified Deaf-native ISL linguists before any use or playback.",
+    "governancePolicy": "PRD Section 3 & ADR-010: Zero synthetic gestures, zero unvalidated gloss substitutions",
+    "segments": [
+      {
+        "sequenceId": "daily_routine_seg_01",
+        "rawTranscript": "I walk to the bathroom to wash my face and brush my teeth.",
+        "startMediaTimeMs": 98000,
+        "endMediaTimeMs": 106000,
+        "sourceChunkSeq": 1,
+        "language": "ISL",
+        "seedLexiconMatches": ["I"],
+        "unsupportedWords": ["walk", "bathroom", "wash", "face", "brush", "teeth"],
+        "provisionalCandidateOnly": true,
+        "prePreparedCandidateGlosses": [
+          { "gloss": "I", "category": "lexical", "source": "seed_dictionary", "durationMs": 500, "animationId": null },
+          { "gloss": "BATHROOM", "category": "lexical", "source": "seed_dictionary", "durationMs": 700, "animationId": null },
+          { "gloss": "WALK", "category": "lexical", "source": "seed_dictionary", "durationMs": 600, "animationId": null },
+          { "gloss": "FACE", "category": "lexical", "source": "seed_dictionary", "durationMs": 500, "animationId": null },
+          { "gloss": "WASH", "category": "lexical", "source": "seed_dictionary", "durationMs": 700, "animationId": null },
+          { "gloss": "TEETH", "category": "lexical", "source": "seed_dictionary", "durationMs": 500, "animationId": null },
+          { "gloss": "BRUSH", "category": "lexical", "source": "seed_dictionary", "durationMs": 700, "animationId": null }
+        ],
+        "approvedForProduction": false,
+        "animationCoverage": "0%",
+        "activeAnimationAction": "NEUTRAL_REST_POSE"
+      },
+      {
+        "sequenceId": "daily_routine_seg_02",
+        "rawTranscript": "After that, I go back to my bedroom to get dressed.",
+        "startMediaTimeMs": 106000,
+        "endMediaTimeMs": 112000,
+        "sourceChunkSeq": 2,
+        "language": "ISL",
+        "seedLexiconMatches": ["I"],
+        "unsupportedWords": ["after", "that", "go", "back", "bedroom", "get", "dressed"],
+        "provisionalCandidateOnly": true,
+        "prePreparedCandidateGlosses": [
+          { "gloss": "BEDROOM", "category": "lexical", "source": "seed_dictionary", "durationMs": 700, "animationId": null },
+          { "gloss": "I", "category": "lexical", "source": "seed_dictionary", "durationMs": 500, "animationId": null },
+          { "gloss": "GO", "category": "lexical", "source": "seed_dictionary", "durationMs": 600, "animationId": null },
+          { "gloss": "CLOTHES", "category": "lexical", "source": "seed_dictionary", "durationMs": 700, "animationId": null },
+          { "gloss": "WEAR", "category": "lexical", "source": "seed_dictionary", "durationMs": 700, "animationId": null }
+        ],
+        "approvedForProduction": false,
+        "animationCoverage": "0%",
+        "activeAnimationAction": "NEUTRAL_REST_POSE"
+      }
+    ]
+  },
+  "animationStatus": {
+    "registeredProductionClips": ["isl_namaste_godl_v1"],
+    "registeredCandidateClips": ["isl_namaste_mocap_candidate_v1"],
+    "segmentAnimationCoverage": 0.0,
+    "fallbackState": "NEUTRAL_REST_POSE",
+    "zeroSyntheticGesturesEnforced": true
+  }
+}

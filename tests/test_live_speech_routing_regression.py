@@ -33,8 +33,30 @@ PORT = 8086
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
+    regression_results = None
+    runner_error = None
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=REPO_ROOT, **kwargs)
+
+    def do_POST(self):
+        if self.path == "/report_regression_results":
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length).decode("utf-8")
+            try:
+                QuietHandler.regression_results = json.loads(body)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(b'{"status":"ok"}')
+            except Exception as e:
+                QuietHandler.runner_error = str(e)
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(b'{"status":"error"}')
+            return
+        self.send_response(404)
+        self.end_headers()
 
     def log_message(self, format, *args):
         pass  # Suppress HTTP server noise
@@ -46,6 +68,8 @@ class TestLiveSpeechRoutingRegression(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Start quiet local HTTP server serving repository root
+        QuietHandler.regression_results = None
+        QuietHandler.runner_error = None
         cls.httpd = socketserver.TCPServer(("127.0.0.1", PORT), QuietHandler)
         cls.server_thread = threading.Thread(target=cls.httpd.serve_forever, daemon=True)
         cls.server_thread.start()
@@ -82,12 +106,40 @@ class TestLiveSpeechRoutingRegression(unittest.TestCase):
                 }
             }
 
-            // Wait for 3D model and rig to load
+            async function reportCompletion(res) {
+                const outDiv = document.createElement("div");
+                outDiv.id = "live-routing-regression-results";
+                outDiv.textContent = JSON.stringify(res);
+                document.body.appendChild(outDiv);
+
+                try {
+                    await fetch("/report_regression_results", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(res)
+                    });
+                } catch (e) {
+                    console.error("Failed to POST regression results:", e);
+                }
+            }
+
+            // Explicit model-loaded signal check with bounded wait
             const telLoaded = document.getElementById("tel-loaded");
+            const diagModelStatus = document.getElementById("diag-model-status");
+            const diagLoadError = document.getElementById("diag-load-error");
             let waitedMs = 0;
-            while (waitedMs < 10000 && (!telLoaded || !telLoaded.innerText.includes("Loaded"))) {
+            const maxModelWaitMs = 15000;
+            while (waitedMs < maxModelWaitMs && (!telLoaded || !telLoaded.innerText.includes("Loaded"))) {
                 await wait(200);
                 waitedMs += 200;
+            }
+
+            const isModelLoaded = Boolean(telLoaded && telLoaded.innerText.includes("Loaded"));
+            assert(isModelLoaded, "S0: 3D Model Loaded", isModelLoaded ? telLoaded.innerText : `Timed out waiting for 3D model (status: ${diagModelStatus ? diagModelStatus.innerText : 'unknown'}, error: ${diagLoadError ? diagLoadError.innerText : 'none'})`);
+
+            if (!isModelLoaded) {
+                await reportCompletion(results);
+                return;
             }
 
             const p = window.player;
@@ -368,51 +420,52 @@ class TestLiveSpeechRoutingRegression(unittest.TestCase):
                 assert(telWhisperBackend && telWhisperBackend.innerText.includes("signbridge-backend"), "S9: Reports Backend Service Name", telWhisperBackend ? telWhisperBackend.innerText : "missing");
             }
 
-            // Expose results to DOM for test runner extraction
-            const outDiv = document.createElement("div");
-            outDiv.id = "live-routing-regression-results";
-            outDiv.textContent = JSON.stringify(results);
-            document.body.appendChild(outDiv);
+            // Expose results and post to test server
+            await reportCompletion(results);
         });
         """
         with open(cls.runner_js_path, "w", encoding="utf-8") as f:
             f.write(test_js)
 
-        # Run Headless Chrome with isolated temp profile
+        # Run Headless Chrome in real-time execution with isolated temp profile
         cls.temp_profile = tempfile.mkdtemp(prefix="chrome_routing_reg_")
         cls.runner_url = f"http://127.0.0.1:{PORT}/extension/overlay/avatar_player_routing_runner.html"
 
-        dump_cmd = [
+        cmd = [
             CHROME_PATH,
             "--headless=new",
             f"--user-data-dir={cls.temp_profile}",
             "--no-first-run",
             "--no-default-browser-check",
-            "--virtual-time-budget=25000",
-            "--dump-dom",
+            "--autoplay-policy=no-user-gesture-required",
+            "--disable-gpu",
+            "--no-sandbox",
             cls.runner_url
         ]
 
-        dump_res = subprocess.run(dump_cmd, capture_output=True, encoding="utf-8", errors="replace")
-        cls.results = None
-        if dump_res.stdout and "live-routing-regression-results" in dump_res.stdout:
-            import re
-            m = re.search(r'<div id="live-routing-regression-results">(.*?)</div>', dump_res.stdout)
-            if m:
-                try:
-                    cls.results = json.loads(m.group(1))
-                except Exception as e:
-                    print("JSON decode error:", e)
+        cls.proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Deterministic bounded wait for test suite completion signal
+        start_wait = time.time()
+        timeout_s = 35
+        while time.time() - start_wait < timeout_s:
+            if QuietHandler.regression_results is not None:
+                break
+            time.sleep(0.25)
+
+        cls.results = QuietHandler.regression_results
         if not cls.results:
-            print("DUMP STDOUT:", dump_res.stdout[-1500:] if dump_res.stdout else "None")
-            print("DUMP STDERR:", dump_res.stderr if dump_res.stderr else "None")
+            print(f"ERROR: Live routing regression did not complete within {timeout_s}s bounded wait")
 
     @classmethod
     def tearDownClass(cls):
         try:
             if hasattr(cls, "proc") and cls.proc:
                 cls.proc.terminate()
-                cls.proc.wait(timeout=2)
+                try:
+                    cls.proc.wait(timeout=2)
+                except Exception:
+                    cls.proc.kill()
         except Exception:
             pass
 

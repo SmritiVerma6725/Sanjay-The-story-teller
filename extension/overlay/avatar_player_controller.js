@@ -38,6 +38,7 @@
       const btnSampleUnknown = document.getElementById("btn-sample-unknown");
       const btnSampleEmpty = document.getElementById("btn-sample-empty");
       const btnSampleDemoCombo = document.getElementById("btn-sample-demo-combo");
+      const btnSampleDailyRoutine = document.getElementById("btn-sample-daily-routine");
 
       const telPipeTranscript = document.getElementById("tel-pipe-transcript");
       const telPipeLang = document.getElementById("tel-pipe-lang");
@@ -531,6 +532,35 @@
         updateUI();
       });
 
+      if (btnSampleDailyRoutine) {
+        btnSampleDailyRoutine.addEventListener("click", () => {
+          const sampleText = "I walk to the bathroom to wash my face and brush my teeth.";
+          inputTranscript.value = sampleText;
+          telPipeTranscript.textContent = `"${sampleText}" (Daily Routine 01:35–01:55 Segment)`;
+          telPipeLang.textContent = 'ISL';
+          activePipelineMetadata.statusState = 'UNREVIEWED CANDIDATE';
+          activePipelineMetadata.noticeText = 'PROVISIONAL UNAPPROVED CANDIDATE: NOT a validated ISL translation. Strictly requires review by 3 qualified Deaf-native ISL linguists. Zero synthetic gestures enforced.';
+          telPipeStatus.innerHTML = '<span class="status-badge" style="background:#9a3412; color:#fed7aa;">UNREVIEWED CANDIDATE (0/3 Reviews)</span>';
+          telPipeSeqId.textContent = 'daily_routine_seg_01 (01:38–01:46 / 98000–106000ms)';
+          telPipeSigns.textContent = '0 playable clips (1 dictionary match: I [un-animated]; 6 out-of-lexicon words: walk, bathroom, wash, face, brush, teeth)';
+          telPipeUnsupported.textContent = 'walk, bathroom, wash, face, brush, teeth';
+          telPipeNotice.textContent = activePipelineMetadata.noticeText;
+          if (bridgeLiveTranscript) bridgeLiveTranscript.textContent = `"${sampleText}"`;
+          if (bridgeStatusBadge) {
+            bridgeStatusBadge.className = "badge-isl";
+            bridgeStatusBadge.style.background = "#1e3a8a";
+            bridgeStatusBadge.style.color = "#93c5fd";
+            bridgeStatusBadge.textContent = "PROTOTYPE: ACTIVE";
+          }
+          if (bridgeRoutingStatus) {
+            bridgeRoutingStatus.textContent = "⚠ Daily Routine Segment (01:35–01:55): Unapproved candidate glosses — NOT a validated ISL translation (0/3 reviews); 0% animated, neutral rest pose held";
+            bridgeRoutingStatus.style.color = "#facc15";
+          }
+          player.resetToNeutralPose();
+          updateUI();
+        });
+      }
+
       // Check Whisper local backend with explicit timeout and error reporting
       let activeHealthCheckId = 0;
       let isHealthCheckInFlight = false;
@@ -757,9 +787,9 @@
               bridgeRoutingStatus.style.color = "#34d399";
             } else {
               if (unsupported.length > 0) {
-                bridgeRoutingStatus.textContent = `⚠ Words in dictionary [${signs.map(s => s.gloss).join(', ')}], 3D animation awaiting qualified review; Out-of-lexicon words: [${unsupported.join(", ")}] — neutral pose held`;
+                bridgeRoutingStatus.textContent = `⚠ Words in dictionary, 3D animation awaiting qualified review [${signs.map(s => s.gloss).join(', ')}]; Out-of-lexicon words: [${unsupported.join(", ")}] — neutral pose held`;
               } else {
-                bridgeRoutingStatus.textContent = `⚠ Words in dictionary [${signs.map(s => s.gloss).join(', ')}], 3D animation awaiting qualified review — neutral pose held`;
+                bridgeRoutingStatus.textContent = `⚠ Words in dictionary, 3D animation awaiting qualified review — neutral pose held [${signs.map(s => s.gloss).join(', ')}]`;
               }
               bridgeRoutingStatus.style.color = "#facc15";
             }

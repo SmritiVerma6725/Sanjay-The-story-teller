@@ -152,14 +152,69 @@ This demonstration highlights SignBridge's core safety and ethical governance: o
 2. Observe the Avatar Player:
    - **Transcript displayed:** `"thank you"`
    - **Routing Status:**
-     `⚠ Words in dictionary [THANK_YOU], 3D animation awaiting qualified review — neutral pose held`
+     `⚠ Words in dictionary, 3D animation awaiting qualified review — neutral pose held [THANK_YOU]`
    - **Avatar Behavior:** Holds neutral rest pose for 500 ms safety buffer, then completes.
    - **Telemetry:** Title displays `Neutral Rest Pose (0 ms)`, badge displays `NEUTRAL`, progress bar displays `0%`.
    - **Integrity Guarantee:** Never fabricates hand gestures for unreviewed vocabulary.
 
 ---
 
-## 5. Demonstration 3 — Direct Diagnostic & Benchmark Controls
+## 5. Demonstration 3 — Daily Routine (01:35–01:55) Single-Video Prototype
+
+This demonstration executes the controlled single-video pipeline on the selected A1 English learning segment.
+
+### Video & Window Information
+- **Source Video:** [YouTube `sMkzwmMs0jM`](https://www.youtube.com/watch?v=sMkzwmMs0jM) (*"Daily Routine | A1 English | Talk About Your Day"*)
+- **Target Segment:** `01:35.00 – 01:55.00` (Media Time: `95,000 ms – 115,000 ms`, Duration: `20.0s`)
+- **Verified Dialogue in Segment:**
+  1. `01:38.00 – 01:46.00`: *"I walk to the bathroom to wash my face and brush my teeth."*
+  2. `01:46.00 – 01:52.00`: *"After that, I go back to my bedroom to get dressed."*
+- **Licensing Constraint (LEGAL-01):** Stream audio directly from YouTube in Chrome; do not download, record, or redistribute video files.
+
+### Demonstration Procedure (Live Audio Capture)
+1. Ensure the backend is running (`http://127.0.0.1:8765/health` returns `200 ok`).
+2. In Google Chrome, open the YouTube video in a tab: `https://www.youtube.com/watch?v=sMkzwmMs0jM`.
+3. Pause the video and seek to timestamp **`01:35`**.
+4. Open the Avatar Player in an adjacent window or tab (`overlay/avatar_player.html`).
+5. Open the SignBridge extension popup and click **"Start Tab Capture & Bridge"**. Status updates to `CAPTURE: ACTIVE`.
+6. Resume playback on the YouTube tab and let it play from **`01:35` to `01:55`** (20 seconds), then pause.
+7. **Observe Real-Time Pipeline Observations:**
+   - **Audio Pipeline:** Tab audio streams to the local Whisper backend in 2-second slices without interrupting audible playback.
+   - **Transcription Telemetry:**
+     - Segment 1: `"I walk to the bathroom to wash my face and brush my teeth."`
+     - Segment 2: `"After that, I go back to my bedroom to get dressed."`
+   - **Lexicon Evaluation & Routing:**
+     - **Approved playable animations:** Exactly **0 clips (0%)**. (Only `NAMASTE` has an approved playable clip in the system).
+     - **Words present in lexicon without animations:** Exactly **1 lemma (`I`)**, matching 5 total token occurrences across the two utterances (`"I"`, `"my"`, `"my"` in Utterance 1; `"I"`, `"my"` in Utterance 2). Its status is `animationId: null` (un-animated, awaiting review).
+     - **Words outside the lexicon (Out-of-lexicon words):**
+       - Utterance 1: 10 raw token instances / 8 unique words (`walk`, `to`, `the`, `bathroom`, `wash`, `face`, `and`, `brush`, `teeth`).
+       - Utterance 2: 9 raw token instances / 8 unique words (`after`, `that`, `go`, `back`, `to`, `bedroom`, `get`, `dressed`).
+       - Combined: 19 raw token instances / 15 unique words.
+   - **Routing Banner Display:**
+     `⚠ Words in dictionary, 3D animation awaiting qualified review [I]; Out-of-lexicon words: [walk, to, the, bathroom, ...] — neutral pose held`
+   - **Avatar Behavior:** The 3D avatar strictly **maintains neutral rest pose** (`NEUTRAL_REST_POSE`). No fake motions, arm flapping, or fingerspelling substitutions occur.
+
+### In-Player Prototype Verification (Deterministic Fallback)
+If live tab audio is unavailable, permissions are blocked, or you need immediate deterministic verification:
+1. In `overlay/avatar_player.html`, click **`► Daily Routine (01:35–01:55 Unreviewed Prototype)`**.
+2. **Observe Instantaneous State & Verification:**
+   - Transcript updates to: `"I walk to the bathroom to wash my face and brush my teeth."`
+   - Target Language: `ISL`.
+   - Pipeline Status Badge: `UNREVIEWED CANDIDATE (0/3 Reviews)`.
+   - Sequence ID: `daily_routine_seg_01 (01:38–01:46 / 98000–106000ms)`.
+   - Generated Signs Telemetry: `0 playable clips (1 dictionary match: I [un-animated]; 6 out-of-lexicon content words: walk, bathroom, wash, face, brush, teeth)`.
+   - Governance Notice: `PROVISIONAL UNAPPROVED CANDIDATE: NOT a validated ISL translation. Strictly requires review by 3 qualified Deaf-native ISL linguists. Zero synthetic gestures enforced.`
+   - Avatar remains safely anchored in neutral rest pose.
+
+### Clean Shutdown Procedure
+1. On the YouTube tab, pause the video.
+2. In the extension popup, click **"Stop Tab Capture & Bridge"**.
+3. Status badge returns to `CAPTURE: IDLE`.
+4. AudioContext and Web Audio stream tracks are closed cleanly; avatar resets to neutral.
+
+---
+
+## 6. Demonstration 4 — Direct Diagnostic & Benchmark Controls
 
 If testing without live audio or microphone input, the Avatar Player includes standalone diagnostic buttons for direct verification:
 
@@ -174,7 +229,7 @@ If testing without live audio or microphone input, the Avatar Player includes st
 
 ---
 
-## 6. Troubleshooting Guide
+## 7. Troubleshooting Guide
 
 | Issue | Root Cause | Exact Resolution Steps |
 | :--- | :--- | :--- |
@@ -186,7 +241,7 @@ If testing without live audio or microphone input, the Avatar Player includes st
 
 ---
 
-## 7. Verification Checklist Before Starting Demonstration
+## 8. Verification Checklist Before Starting Demonstration
 
 - [ ] FastAPI backend running on port 8765 (`curl http://127.0.0.1:8765/health` returns `200 ok`).
 - [ ] Extension loaded unpacked in Chrome (`chrome://extensions`).
